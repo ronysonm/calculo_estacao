@@ -1,0 +1,374 @@
+/**
+ * CalculationTable Component
+ *
+ * Custom HTML table matching the Excel model layout.
+ * Each lot gets 3 rows: Dia (weekday), Data (date), Dia do ciclo (cycle day).
+ * Between rounds, gap controls with +/- buttons allow adjusting intervals.
+ */
+
+import { useState } from 'preact/hooks';
+import { lotsSignal, changeLotRoundGap, changeLotD0, renameLot, changeLotProtocol } from '@/state/signals/lots';
+import { handlingDatesSignal } from '@/state/signals/conflicts';
+import { getDayOfWeekName, formatDateBR, addDaysToDateOnly } from '@/core/date-engine/utils';
+import { getConflictTypeForCell } from '@/core/conflict/detector';
+import { DEFAULT_ROUNDS, ROUND_NAMES, PREDEFINED_PROTOCOLS } from '@/domain/constants';
+import { DateOnly } from '@/domain/value-objects/DateOnly';
+import { Lot } from '@/domain/value-objects/Lot';
+import { HandlingDate } from '@/domain/value-objects/HandlingDate';
+import '@/styles/table.css';
+
+function LotBlock({
+  lot,
+  handlingDates,
+  allHandlingDates,
+}: {
+  lot: Lot;
+  handlingDates: HandlingDate[];
+  allHandlingDates: HandlingDate[];
+}) {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editD0, setEditD0] = useState('');
+  const [editProtocolId, setEditProtocolId] = useState('');
+
+  const openEditModal = () => {
+    setEditName(lot.name);
+    setEditD0(lot.d0.toISOString());
+    setEditProtocolId(lot.protocol.id);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSave = () => {
+    if (editName !== lot.name) {
+      renameLot(lot.id, editName);
+    }
+    const currentD0Iso = lot.d0.toISOString();
+    if (editD0 !== currentD0Iso) {
+      const newD0 = DateOnly.fromISOString(editD0);
+      changeLotD0(lot.id, newD0);
+    }
+    if (editProtocolId !== lot.protocol.id) {
+      const newProtocol = PREDEFINED_PROTOCOLS.find((p) => p.id === editProtocolId);
+      if (newProtocol) {
+        changeLotProtocol(lot.id, newProtocol);
+      }
+    }
+    setIsEditModalOpen(false);
+  };
+
+  const protocolDays = lot.protocol.intervals;
+
+  // Group handling dates by round
+  const datesByRound: Map<number, HandlingDate[]> = new Map();
+  for (const hd of handlingDates) {
+    const existing = datesByRound.get(hd.roundId) || [];
+    existing.push(hd);
+    datesByRound.set(hd.roundId, existing);
+  }
+
+  const handleGapChange = (gapIndex: number, delta: number) => {
+    const currentGap = lot.roundGaps[gapIndex] ?? 22;
+    const newGap = Math.max(1, currentGap + delta);
+    changeLotRoundGap(lot.id, gapIndex, newGap);
+  };
+
+  const handleD0Change = (delta: number) => {
+    const newD0 = addDaysToDateOnly(lot.d0, delta);
+    changeLotD0(lot.id, newD0);
+  };
+
+  // Calculate "Dia do ciclo" values using cumulative offsets from D0 of R1
+  const getCycleDays = (roundIdx: number): number[] => {
+    const startOffset = lot.getRoundStartOffset(roundIdx);
+    return protocolDays.map((pd) => startOffset + pd);
+  };
+
+  return (
+    <div class="lot-block">
+      {/* Header row with protocol day labels for each round */}
+      <table class="lot-table">
+        <thead>
+          {/* Round headers */}
+          <tr class="round-header-row">
+            <th class="lot-label-header"></th>
+            <th class="row-label-header"></th>
+            {Array.from({ length: DEFAULT_ROUNDS }).map((_, roundIdx) => (
+              <>
+                {protocolDays.map((pd) => (
+                  <th key={`rh-${roundIdx}-${pd}`} class="round-header-cell">
+                    {roundIdx === 0 && pd === protocolDays[0] ? '' : ''}
+                  </th>
+                ))}
+                {roundIdx < DEFAULT_ROUNDS - 1 && (
+                  <th class="gap-header-cell"></th>
+                )}
+              </>
+            ))}
+          </tr>
+          {/* Protocol day headers */}
+          <tr class="protocol-header-row">
+            <th class="lot-label-header"></th>
+            <th class="row-label-header"></th>
+            {Array.from({ length: DEFAULT_ROUNDS }).map((_, roundIdx) => (
+              <>
+                {protocolDays.map((pd) => (
+                  <th key={`ph-${roundIdx}-${pd}`} class="protocol-header-cell">
+                    D{pd}
+                  </th>
+                ))}
+                {roundIdx < DEFAULT_ROUNDS - 1 && (
+                  <th class="gap-header-cell"></th>
+                )}
+              </>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {/* Row 1: Dia (weekday) */}
+          <tr class="dia-row">
+            <td class="lot-name-cell" rowSpan={3}>
+              <span class="lot-name-text" onDblClick={openEditModal} title="Duplo clique para editar">{lot.name}</span>
+              <div class="d0-controls">
+                <button
+                  type="button"
+                  class="d0-btn d0-btn-minus"
+                  onClick={() => handleD0Change(-1)}
+                  title="Recuar 1 dia"
+                >
+                  -1
+                </button>
+                <span class="d0-value">{formatDateBR(lot.d0)}</span>
+                <button
+                  type="button"
+                  class="d0-btn d0-btn-plus"
+                  onClick={() => handleD0Change(1)}
+                  title="Avançar 1 dia"
+                >
+                  +1
+                </button>
+              </div>
+            </td>
+            <td class="row-label-cell">Dia</td>
+            {Array.from({ length: DEFAULT_ROUNDS }).map((_, roundIdx) => {
+              const roundDates = datesByRound.get(roundIdx) || [];
+              return (
+                <>
+                  {protocolDays.map((pd) => {
+                    const hd = roundDates.find((h) => h.protocolDay === pd);
+                    const dayName = hd ? getDayOfWeekName(hd.date) : '';
+                    const conflictType = hd
+                      ? getConflictTypeForCell(hd.date, lot.id, allHandlingDates)
+                      : null;
+                    return (
+                      <td
+                        key={`dia-${roundIdx}-${pd}`}
+                        class={`data-cell dia-cell ${conflictType ? `conflict-${conflictType}` : ''}`}
+                      >
+                        {dayName}
+                      </td>
+                    );
+                  })}
+                  {roundIdx < DEFAULT_ROUNDS - 1 && (
+                    <td class="gap-cell gap-buttons-cell" rowSpan={3}>
+                      <div class="gap-controls">
+                        <button
+                          type="button"
+                          class="gap-btn gap-btn-minus"
+                          onClick={() => handleGapChange(roundIdx, -1)}
+                          title="Menos 1 dia"
+                        >
+                          -1
+                        </button>
+                        <span class="gap-value">{lot.roundGaps[roundIdx] ?? 22}</span>
+                        <button
+                          type="button"
+                          class="gap-btn gap-btn-plus"
+                          onClick={() => handleGapChange(roundIdx, 1)}
+                          title="Mais 1 dia"
+                        >
+                          +1
+                        </button>
+                        <span class="gap-unit">dias</span>
+                      </div>
+                    </td>
+                  )}
+                </>
+              );
+            })}
+          </tr>
+
+          {/* Row 2: Data (date) */}
+          <tr class="data-row">
+            <td class="row-label-cell">Data</td>
+            {Array.from({ length: DEFAULT_ROUNDS }).map((_, roundIdx) => {
+              const roundDates = datesByRound.get(roundIdx) || [];
+              return (
+                <>
+                  {protocolDays.map((pd) => {
+                    const hd = roundDates.find((h) => h.protocolDay === pd);
+                    const dateStr = hd ? formatDateBR(hd.date) : '';
+                    const conflictType = hd
+                      ? getConflictTypeForCell(hd.date, lot.id, allHandlingDates)
+                      : null;
+                    return (
+                      <td
+                        key={`data-${roundIdx}-${pd}`}
+                        class={`data-cell date-value-cell ${conflictType ? `conflict-${conflictType}` : ''}`}
+                      >
+                        {dateStr}
+                      </td>
+                    );
+                  })}
+                </>
+              );
+            })}
+          </tr>
+
+          {/* Row 3: Dia do ciclo (cycle day) */}
+          <tr class="ciclo-row">
+            <td class="row-label-cell row-label-bottom">Dia do ciclo</td>
+            {Array.from({ length: DEFAULT_ROUNDS }).map((_, roundIdx) => {
+              const cycleDays = getCycleDays(roundIdx);
+              return (
+                <>
+                  {cycleDays.map((cd, pdIdx) => (
+                    <td
+                      key={`ciclo-${roundIdx}-${pdIdx}`}
+                      class="data-cell ciclo-cell"
+                    >
+                      {cd}
+                    </td>
+                  ))}
+                </>
+              );
+            })}
+          </tr>
+        </tbody>
+      </table>
+
+      {isEditModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setIsEditModalOpen(false)}
+        >
+          <div
+            class="card"
+            style={{ maxWidth: '400px', width: '90%' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>Editar Lote</h3>
+            <div style={{ marginBottom: 'var(--spacing-sm)' }}>
+              <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 600, fontSize: '0.875rem' }}>
+                Nome do lote
+              </label>
+              <input
+                type="text"
+                style={{ width: '100%', padding: 'var(--spacing-xs) var(--spacing-sm)', fontSize: '0.875rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}
+                value={editName}
+                onInput={(e) => setEditName((e.target as HTMLInputElement).value)}
+              />
+            </div>
+            <div style={{ marginBottom: 'var(--spacing-sm)' }}>
+              <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 600, fontSize: '0.875rem' }}>
+                Data de inicio (D0)
+              </label>
+              <input
+                type="date"
+                style={{ width: '100%', padding: 'var(--spacing-xs) var(--spacing-sm)', fontSize: '0.875rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}
+                value={editD0}
+                onInput={(e) => setEditD0((e.target as HTMLInputElement).value)}
+              />
+            </div>
+            <div style={{ marginBottom: 'var(--spacing-md)' }}>
+              <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 600, fontSize: '0.875rem' }}>
+                Protocolo
+              </label>
+              <select
+                style={{ width: '100%', padding: 'var(--spacing-xs) var(--spacing-sm)', fontSize: '0.875rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}
+                value={editProtocolId}
+                onChange={(e) => setEditProtocolId((e.target as HTMLSelectElement).value)}
+              >
+                {PREDEFINED_PROTOCOLS.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-sm)' }}>
+              <button type="button" class="btn-secondary" onClick={() => setIsEditModalOpen(false)}>
+                Cancelar
+              </button>
+              <button type="button" class="btn-primary" onClick={handleSave}>
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function CalculationTable() {
+  const lots = lotsSignal.value;
+  const allHandlingDates = handlingDatesSignal.value;
+
+  if (lots.length === 0) {
+    return (
+      <div class="calculation-table-container">
+        <div class="table-empty">
+          <div class="table-empty-text">Nenhum lote adicionado</div>
+          <div class="table-empty-hint">
+            Adicione lotes usando o formulario ao lado para comecar a calcular as datas de manejo.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div class="calculation-table-container">
+      {/* Round headers at the top */}
+      <div class="round-headers-bar">
+        <div class="round-headers-spacer"></div>
+        {Array.from({ length: DEFAULT_ROUNDS }).map((_, roundIdx) => (
+          <>
+            <div key={`rnd-${roundIdx}`} class="round-header-label">
+              {ROUND_NAMES[roundIdx]}
+            </div>
+            {roundIdx < DEFAULT_ROUNDS - 1 && (
+              <div class="round-header-gap-spacer"></div>
+            )}
+          </>
+        ))}
+      </div>
+
+      {/* One block per lot */}
+      <div class="lots-container">
+        {lots.map((lot) => {
+          const lotHandlingDates = allHandlingDates.filter(
+            (hd) => hd.lotId === lot.id
+          );
+          return (
+            <LotBlock
+              key={lot.id}
+              lot={lot}
+              handlingDates={lotHandlingDates}
+              allHandlingDates={allHandlingDates}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}

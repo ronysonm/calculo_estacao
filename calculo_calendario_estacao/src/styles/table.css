@@ -1,0 +1,315 @@
+/**
+ * Table Styles - Excel-like layout matching Modelo.xlsx
+ */
+
+/* ============ Container ============ */
+.calculation-table-container {
+  width: 100%;
+  overflow-x: auto;
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-md);
+}
+
+/* ============ Round Headers Bar ============ */
+.round-headers-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+  padding-left: 0;
+}
+
+.round-headers-spacer {
+  /* Space for lot name + row label columns */
+  min-width: 170px;
+  flex-shrink: 0;
+}
+
+.round-header-label {
+  flex: 1;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  padding: var(--spacing-sm) 0;
+  border: 1.5px solid #111;
+  background-color: #f3f4f6;
+}
+
+.round-header-gap-spacer {
+  min-width: 56px;
+  flex-shrink: 0;
+}
+
+/* ============ Lots Container ============ */
+.lots-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* ============ Lot Block ============ */
+.lot-block {
+  width: 100%;
+}
+
+.lot-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.8125rem;
+}
+
+/* ============ Header Cells ============ */
+.lot-label-header,
+.row-label-header {
+  border: none;
+  background: transparent;
+}
+
+.lot-label-header {
+  width: 80px;
+}
+
+.row-label-header {
+  width: 90px;
+}
+
+.round-header-row {
+  display: none; /* Hidden - round headers are in the bar above */
+}
+
+.protocol-header-row th {
+  background-color: #f3f4f6;
+  font-weight: 700;
+  text-align: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 0.5px solid var(--color-border);
+  font-size: 0.8125rem;
+}
+
+.protocol-header-cell {
+  min-width: 90px;
+}
+
+.gap-header-cell {
+  width: 56px;
+  min-width: 56px;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* ============ Lot Name Cell ============ */
+.lot-name-cell {
+  font-weight: 700;
+  font-size: 1rem;
+  text-align: center;
+  vertical-align: middle;
+  border: 0.5px solid var(--color-border);
+  background-color: #fafafa;
+  width: 80px;
+  padding: var(--spacing-xs);
+  writing-mode: horizontal-tb;
+}
+
+/* ============ D0 Controls (cycle start adjustment) ============ */
+.lot-name-text {
+  display: block;
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.lot-name-text:hover {
+  color: #00B0F0;
+  text-decoration: underline;
+}
+
+.d0-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.d0-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 20px;
+  padding: 0;
+  font-size: 0.625rem;
+  font-weight: 600;
+  border: 1px solid #00B0F0;
+  background-color: #00B0F0;
+  color: white;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.d0-btn:hover {
+  background-color: #0090cc;
+}
+
+.d0-btn:active {
+  background-color: #007ab3;
+}
+
+.d0-value {
+  font-size: 0.625rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ============ Row Label Cell ============ */
+.row-label-cell {
+  font-size: 0.6875rem;
+  text-align: center;
+  vertical-align: middle;
+  border: 0.5px solid var(--color-border);
+  background-color: #fafafa;
+  padding: var(--spacing-xs);
+  width: 90px;
+  border-left: 0.5px solid var(--color-border);
+}
+
+.row-label-bottom {
+  border-bottom: 0.5px solid var(--color-border);
+}
+
+/* ============ Data Cells ============ */
+.data-cell {
+  text-align: center;
+  vertical-align: middle;
+  border: 0.5px solid var(--color-border);
+  padding: 3px 4px;
+  font-family: var(--font-mono);
+  min-width: 90px;
+}
+
+.dia-cell {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.date-value-cell {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.ciclo-cell {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  border-bottom: 0.5px solid var(--color-border);
+}
+
+/* ============ Gap Controls ============ */
+.gap-cell {
+  width: 56px;
+  min-width: 56px;
+  border: none;
+  vertical-align: middle;
+  padding: 0;
+}
+
+.gap-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+}
+
+.gap-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  padding: 2px 2px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border: 1px solid #00B0F0;
+  background-color: #00B0F0;
+  color: white;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.gap-btn:hover {
+  background-color: #0090cc;
+}
+
+.gap-btn:active {
+  background-color: #007ab3;
+}
+
+.gap-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-align: center;
+  min-width: 30px;
+}
+
+.gap-unit {
+  font-size: 0.625rem;
+  color: var(--color-text-secondary);
+}
+
+/* ============ Conflict Colors ============ */
+.conflict-sunday {
+  background-color: rgba(255, 68, 68, 0.15) !important;
+  color: #cc0000;
+}
+
+.conflict-overlap {
+  background-color: rgba(255, 170, 68, 0.15) !important;
+  color: #cc6600;
+}
+
+.conflict-multiple {
+  background-color: rgba(255, 68, 68, 0.25) !important;
+  color: #cc0000;
+}
+
+/* ============ Empty State ============ */
+.table-empty {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.table-empty-text {
+  font-size: 1rem;
+  margin-bottom: var(--spacing-sm);
+}
+
+.table-empty-hint {
+  font-size: 0.875rem;
+}
+
+/* ============ Print Adjustments ============ */
+@media print {
+  .gap-btn,
+  .d0-btn {
+    display: none;
+  }
+
+  .gap-controls {
+    justify-content: center;
+  }
+
+  .gap-value {
+    font-size: 0.75rem;
+  }
+
+  .calculation-table-container {
+    box-shadow: none;
+    border: none;
+    padding: 0;
+  }
+}

@@ -89,38 +89,38 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CALC-01 | — | Pending |
-| CALC-02 | — | Pending |
-| CALC-03 | — | Pending |
-| CALC-04 | — | Pending |
-| CALC-05 | — | Pending |
-| LOTE-01 | — | Pending |
-| LOTE-02 | — | Pending |
-| LOTE-03 | — | Pending |
-| LOTE-04 | — | Pending |
-| LOTE-05 | — | Pending |
-| CONF-01 | — | Pending |
-| CONF-02 | — | Pending |
-| CONF-03 | — | Pending |
-| CONF-04 | — | Pending |
-| CONF-05 | — | Pending |
-| CONF-06 | — | Pending |
-| CONF-07 | — | Pending |
-| CONF-08 | — | Pending |
-| CONF-09 | — | Pending |
-| CONF-10 | — | Pending |
-| VISU-01 | — | Pending |
-| VISU-02 | — | Pending |
-| EXPO-01 | — | Pending |
-| EXPO-02 | — | Pending |
-| PERS-01 | — | Pending |
-| PERS-02 | — | Pending |
+| CALC-01 | Phase 1 | Pending |
+| CALC-02 | Phase 1 | Pending |
+| CALC-03 | Phase 1 | Pending |
+| CALC-04 | Phase 1 | Pending |
+| CALC-05 | Phase 1 | Pending |
+| LOTE-01 | Phase 2 | Pending |
+| LOTE-02 | Phase 2 | Pending |
+| LOTE-03 | Phase 2 | Pending |
+| LOTE-04 | Phase 2 | Pending |
+| LOTE-05 | Phase 2 | Pending |
+| CONF-01 | Phase 3 | Pending |
+| CONF-02 | Phase 3 | Pending |
+| CONF-03 | Phase 3 | Pending |
+| CONF-04 | Phase 3 | Pending |
+| CONF-05 | Phase 3 | Pending |
+| CONF-06 | Phase 3 | Pending |
+| CONF-07 | Phase 3 | Pending |
+| CONF-08 | Phase 3 | Pending |
+| CONF-09 | Phase 3 | Pending |
+| CONF-10 | Phase 3 | Pending |
+| VISU-01 | Phase 2 | Pending |
+| VISU-02 | Phase 2 | Pending |
+| EXPO-01 | Phase 4 | Pending |
+| EXPO-02 | Phase 4 | Pending |
+| PERS-01 | Phase 4 | Pending |
+| PERS-02 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 26 total
-- Mapped to phases: 0
-- Unmapped: 26 ⚠️
+- Mapped to phases: 26
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 after initial definition*
+*Last updated: 2026-02-12 after roadmap creation*

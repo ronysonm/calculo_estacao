@@ -28,10 +28,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. System handles edge cases (leap years, Dec 31 + 1 day, month boundaries) correctly using date-fns
   3. Protocols (pre-defined and custom) are represented as immutable domain objects with validation
   4. Multiple rounds (A1-A4) calculate with configurable intervals (default 22 days) per lot
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 01-01: TBD during phase planning
+- [ ] 01-01-PLAN.md — Project scaffolding (React + TypeScript + Vite + Tailwind + shadcn/ui + Vitest)
+- [ ] 01-02-PLAN.md — Domain models (Protocol, Round, Lot) and pre-defined protocol constants
+- [ ] 01-03-PLAN.md — Date calculation engine (TDD with edge case coverage)
 
 ### Phase 2: Core Application
 **Goal**: Deliver working calculator UI with lot management and table visualization showing all calculated dates.
@@ -85,7 +87,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/TBD | Not started | - |
+| 1. Foundation | 0/3 | Planning complete | - |
 | 2. Core Application | 0/TBD | Not started | - |
 | 3. Conflict System | 0/TBD | Not started | - |
 | 4. Persistence & Export | 0/TBD | Not started | - |

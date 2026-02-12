@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateManejoDate, calculateProtocolDates, calculateLotSchedule, type ManejoDate } from '@/domain/calculations/dateEngine';
+import { calculateManejoDate, calculateProtocolDates, calculateLotSchedule } from '@/domain/calculations/dateEngine';
 import type { Protocol, Lot } from '@/domain/models';
 
 describe('dateEngine', () => {
@@ -31,7 +31,7 @@ describe('dateEngine', () => {
     it('calculates fourth round with day offset', () => {
       const d0 = new Date(2024, 0, 15); // Jan 15 2024
       const result = calculateManejoDate(d0, 9, 3, 22);
-      expect(result).toEqual(new Date(2024, 3, 2)); // Apr 2 2024
+      expect(result).toEqual(new Date(2024, 2, 30)); // Mar 30 2024 (Jan 15 + 3*22 + 9 = 75 days)
     });
 
     it('handles year crossing correctly', () => {
@@ -119,10 +119,10 @@ describe('dateEngine', () => {
 
       expect(result).toHaveLength(12); // 3 days * 4 rounds
 
-      // Verify last D9 (round 4): addDays(Jan 1, 3*22+9) = Apr 5 2024
+      // Verify last D9 (round 4): addDays(Jan 1, 3*22+9) = Jan 1 + 75 days = Mar 16 2024
       const lastD9 = result[11];
       expect(lastD9.day).toBe(9);
-      expect(lastD9.date).toEqual(new Date(2024, 3, 5)); // Apr 5 2024
+      expect(lastD9.date).toEqual(new Date(2024, 2, 16)); // Mar 16 2024
       expect(lastD9.roundLabel).toBe('A4');
     });
 

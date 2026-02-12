@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 1 of 4 (Foundation)
-Plan: 2 of 3 in current phase
-Status: Executing
-Last activity: 2026-02-12 — Completed plan 01-02: Immutable domain model (Protocol, Round, Lot)
+Plan: 3 of 3 in current phase
+Status: Phase Complete
+Last activity: 2026-02-12 — Completed plan 01-03: Date calculation engine with TDD
 
-Progress: [████░░░░░░] 67%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 3.5 minutes
-- Total execution time: 0.12 hours
+- Total plans completed: 3
+- Average duration: 3.0 minutes
+- Total execution time: 0.15 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation | 2 | 7m | 3.5m |
+| 01-foundation | 3 | 9m | 3.0m |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (4m), 01-02 (3m)
-- Trend: Consistent velocity
+- Last 5 plans: 01-01 (4m), 01-02 (3m), 01-03 (2m 38s)
+- Trend: Improving velocity
 
 *Updated after each plan completion*
 
@@ -51,6 +51,9 @@ Recent decisions affecting current work:
 - Use readonly tuple [number, number, number] for Protocol.days (01-02: Enforces exactly 3 manejos at type level)
 - Stable IDs for pre-defined protocols (01-02: Ensures consistency across sessions and localStorage)
 - Guard functions enforce business rules (01-02: Prevents pre-defined protocol mutation at runtime)
+- Use ONLY date-fns addDays for date arithmetic (01-03: Prevents manual date manipulation bugs with boundaries)
+- Return ManejoDate objects bundling day/date/roundLabel (01-03: Prevents UI misalignment)
+- Natural ordering by round then day (01-03: Iteration order produces correct display order)
 
 ### Pending Todos
 
@@ -63,7 +66,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 01-02-PLAN.md (Immutable domain model)
+Stopped at: Completed 01-03-PLAN.md (Date calculation engine) - Phase 01 Complete
 Resume file: None
 
 ---

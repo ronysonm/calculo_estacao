@@ -8,8 +8,8 @@
 
 import { useState } from 'preact/hooks';
 import { lotsSignal, changeLotRoundGap, changeLotD0, renameLot, changeLotProtocol, removeLot } from '@/state/signals/lots';
-import { handlingDatesSignal } from '@/state/signals/conflicts';
-import { getDayOfWeekName, formatDateBR, addDaysToDateOnly } from '@/core/date-engine/utils';
+import { handlingDatesSignal, cycleStartSignal } from '@/state/signals/conflicts';
+import { getDayOfWeekName, formatDateBR, addDaysToDateOnly, daysBetween } from '@/core/date-engine/utils';
 import { getConflictTypeForCell } from '@/core/conflict/detector';
 import { DEFAULT_ROUNDS, ROUND_NAMES, PREDEFINED_PROTOCOLS } from '@/domain/constants';
 import { DateOnly } from '@/domain/value-objects/DateOnly';
@@ -21,10 +21,12 @@ function LotBlock({
   lot,
   handlingDates,
   allHandlingDates,
+  cycleStart,
 }: {
   lot: Lot;
   handlingDates: HandlingDate[];
   allHandlingDates: HandlingDate[];
+  cycleStart: DateOnly;
 }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isConfirmRemoveOpen, setIsConfirmRemoveOpen] = useState(false);
@@ -78,10 +80,11 @@ function LotBlock({
     changeLotD0(lot.id, newD0);
   };
 
-  // Calculate "Dia do ciclo" values using cumulative offsets from D0 of R1
+  // Calculate "Dia do ciclo" values relative to the global cycle start date
+  const lotOffset = daysBetween(cycleStart, lot.d0);
   const getCycleDays = (roundIdx: number): number[] => {
     const startOffset = lot.getRoundStartOffset(roundIdx);
-    return protocolDays.map((pd) => startOffset + pd);
+    return protocolDays.map((pd) => lotOffset + startOffset + pd);
   };
 
   return (
@@ -408,6 +411,8 @@ export function CalculationTable() {
     );
   }
 
+  const cycleStart = cycleStartSignal.value ?? lots[0]!.d0;
+
   return (
     <div class="calculation-table-container">
       {/* Round headers at the top */}
@@ -437,6 +442,7 @@ export function CalculationTable() {
               lot={lot}
               handlingDates={lotHandlingDates}
               allHandlingDates={allHandlingDates}
+              cycleStart={cycleStart}
             />
           );
         })}

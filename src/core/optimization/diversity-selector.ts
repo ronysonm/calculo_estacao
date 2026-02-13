@@ -2,7 +2,7 @@ import { Lot } from '@/domain/value-objects/Lot';
 import { Chromosome } from './types';
 
 /**
- * Calcula distancia entre dois cronogramas (soma de diferencas de D0)
+ * Calcula distancia entre dois cronogramas (soma de diferencas de D0 + gaps)
  */
 export function scheduleDistance(lots1: Lot[], lots2: Lot[]): number {
   let totalDiff = 0;
@@ -12,8 +12,11 @@ export function scheduleDistance(lots1: Lot[], lots2: Lot[]): number {
     const lot2 = lots2[i];
 
     if (lot1 && lot2) {
-      const diff = Math.abs(lot1.d0.daysSince(lot2.d0));
-      totalDiff += diff;
+      totalDiff += Math.abs(lot1.d0.daysSince(lot2.d0));
+
+      for (let g = 0; g < lot1.roundGaps.length; g++) {
+        totalDiff += Math.abs((lot1.roundGaps[g] ?? 22) - (lot2.roundGaps[g] ?? 22));
+      }
     }
   }
 
@@ -21,7 +24,7 @@ export function scheduleDistance(lots1: Lot[], lots2: Lot[]): number {
 }
 
 /**
- * Aplica cromossomo aos lotes base
+ * Aplica cromossomo aos lotes base (D0 offset + round gaps)
  */
 export function applyChromosome(
   chromosome: Chromosome,
@@ -29,10 +32,21 @@ export function applyChromosome(
 ): Lot[] {
   return baseLots.map((lot) => {
     const gene = chromosome.genes.find((g) => g.lotId === lot.id);
-    if (!gene || gene.d0Offset === 0) return lot;
+    if (!gene) return lot;
 
-    const newD0 = lot.d0.addDays(gene.d0Offset);
-    return lot.withD0(newD0);
+    let adjusted = lot;
+
+    if (gene.d0Offset !== 0) {
+      adjusted = adjusted.withD0(lot.d0.addDays(gene.d0Offset));
+    }
+
+    for (let i = 0; i < 3; i++) {
+      if (gene.roundGaps[i] !== lot.roundGaps[i]) {
+        adjusted = adjusted.withRoundGap(i, gene.roundGaps[i]!);
+      }
+    }
+
+    return adjusted;
   });
 }
 

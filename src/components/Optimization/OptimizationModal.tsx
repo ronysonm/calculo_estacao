@@ -98,15 +98,24 @@ export function OptimizationModal({ scenarios, originalLots, onApply, onClose }:
                     <ul>
                       {changes.map((change) => (
                         <li key={change.lotId}>
-                          <strong>{change.lotName}:</strong>{' '}
-                          {change.oldD0} &rarr; {change.newD0}
-                          <span
-                            class={
-                              change.daysDiff > 0 ? 'text-success' : 'text-warning'
-                            }
-                          >
-                            {change.daysDiff > 0 ? ` (+${change.daysDiff})` : ` (${change.daysDiff})`} dias
-                          </span>
+                          <strong>{change.lotName}:</strong>
+                          {change.daysDiff !== 0 && (
+                            <div>
+                              D0: {change.oldD0} &rarr; {change.newD0}
+                              <span
+                                class={
+                                  change.daysDiff > 0 ? 'text-success' : 'text-warning'
+                                }
+                              >
+                                {change.daysDiff > 0 ? ` (+${change.daysDiff})` : ` (${change.daysDiff})`} dias
+                              </span>
+                            </div>
+                          )}
+                          {change.gapChanges.map((gc) => (
+                            <div key={gc.gapIndex} class="text-muted" style={{ fontSize: '0.85em' }}>
+                              {gc.roundLabel}: {gc.oldGap} &rarr; {gc.newGap} dias
+                            </div>
+                          ))}
                         </li>
                       ))}
                     </ul>

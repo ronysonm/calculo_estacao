@@ -1,11 +1,12 @@
 import { ScheduleObjectives } from '@/domain/value-objects/OptimizationScenario';
 
 /**
- * Gene - Representa o ajuste de D0 de um unico lote
+ * Gene - Representa o ajuste de D0 e intervalos de um unico lote
  */
 export interface Gene {
   lotId: string;
   d0Offset: number;
+  roundGaps: [number, number, number]; // intervalo entre rodadas (21, 22 ou 23 dias)
 }
 
 /**
@@ -28,6 +29,7 @@ export interface ScenarioWeights {
   sundaysRounds34: number;
   totalCycleDays: number;
   d0OffsetPenalty: number;
+  gapChangePenalty: number;
 }
 
 /**

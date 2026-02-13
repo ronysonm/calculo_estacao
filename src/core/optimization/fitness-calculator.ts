@@ -16,6 +16,7 @@ export const DEFAULT_WEIGHTS: ScenarioWeights = {
   sundaysRounds34: -50,
   totalCycleDays: 1,
   d0OffsetPenalty: 0,
+  gapChangePenalty: 0,
 };
 
 /**
@@ -33,6 +34,7 @@ export const SCENARIO_PROFILES: ScenarioProfile[] = [
       sundaysRounds34: 2000,
       totalCycleDays: 0.1,
       d0OffsetPenalty: 0,
+      gapChangePenalty: 0,
     },
   },
   {
@@ -46,6 +48,7 @@ export const SCENARIO_PROFILES: ScenarioProfile[] = [
       sundaysRounds34: -50,
       totalCycleDays: 100,
       d0OffsetPenalty: 0,
+      gapChangePenalty: 0,
     },
   },
   {
@@ -59,6 +62,7 @@ export const SCENARIO_PROFILES: ScenarioProfile[] = [
       sundaysRounds34: -50,
       totalCycleDays: 1,
       d0OffsetPenalty: 0,
+      gapChangePenalty: 50,
     },
   },
   {
@@ -72,6 +76,7 @@ export const SCENARIO_PROFILES: ScenarioProfile[] = [
       sundaysRounds34: -50,
       totalCycleDays: 1,
       d0OffsetPenalty: 200,
+      gapChangePenalty: 200,
     },
   },
 ];
@@ -188,13 +193,24 @@ export function evaluateChromosome(
   baseLots: Lot[],
   weights: ScenarioWeights = DEFAULT_WEIGHTS
 ): { fitness: number; objectives: ScheduleObjectives } {
-  // Aplicar offsets do cromossomo aos lotes
+  // Aplicar offsets de D0 e roundGaps do cromossomo aos lotes
   const adjustedLots = baseLots.map((lot) => {
     const gene = chromosome.genes.find((g) => g.lotId === lot.id);
-    if (!gene || gene.d0Offset === 0) return lot;
+    if (!gene) return lot;
 
-    const newD0 = lot.d0.addDays(gene.d0Offset);
-    return lot.withD0(newD0);
+    let adjusted = lot;
+
+    if (gene.d0Offset !== 0) {
+      adjusted = adjusted.withD0(lot.d0.addDays(gene.d0Offset));
+    }
+
+    for (let i = 0; i < 3; i++) {
+      if (gene.roundGaps[i] !== lot.roundGaps[i]) {
+        adjusted = adjusted.withRoundGap(i, gene.roundGaps[i]!);
+      }
+    }
+
+    return adjusted;
   });
 
   const objectives = calculateObjectives(adjustedLots);
@@ -207,6 +223,22 @@ export function evaluateChromosome(
       totalOffset += Math.abs(gene.d0Offset);
     }
     penalty += totalOffset * weights.d0OffsetPenalty;
+  }
+
+  // Penalidade por mudanca de gaps (para cenario conservador)
+  if (weights.gapChangePenalty > 0) {
+    let totalGapChanges = 0;
+    for (const gene of chromosome.genes) {
+      const baseLot = baseLots.find((l) => l.id === gene.lotId);
+      if (baseLot) {
+        for (let i = 0; i < 3; i++) {
+          if (gene.roundGaps[i] !== baseLot.roundGaps[i]) {
+            totalGapChanges++;
+          }
+        }
+      }
+    }
+    penalty += totalGapChanges * weights.gapChangePenalty;
   }
 
   const fitness = 1 / (1 + penalty);

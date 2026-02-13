@@ -87,18 +87,26 @@ export class GeneticScheduler {
   }
 
   /**
-   * Inicializa populacao com NEH + aleatorios
+   * Inicializa populacao com NEH + baseline + aleatorios
    */
   private initializePopulation(weights: ScenarioWeights): Chromosome[] {
     const population: Chromosome[] = [];
 
-    // 1 solucao NEH (boa heuristica)
+    // 1 solucao NEH (boa heuristica com exploracao de gaps)
     const nehSolution = nehInitialization(this.lots, weights);
     population.push(nehSolution);
 
+    // 1 solucao baseline (sem alteracoes - garante nunca piorar)
+    const baselineGenes = this.lots.map((lot) => ({
+      lotId: lot.id,
+      d0Offset: 0,
+      roundGaps: [...lot.roundGaps].slice(0, 3) as [number, number, number],
+    }));
+    population.push({ genes: baselineGenes, fitness: 0 });
+
     // Resto aleatorio
     const lotIds = this.lots.map((l) => l.id);
-    for (let i = 1; i < this.params.populationSize; i++) {
+    for (let i = 2; i < this.params.populationSize; i++) {
       const chromosome = createRandomChromosome(
         lotIds,
         this.params.maxD0Adjustment
@@ -161,8 +169,20 @@ export class GeneticScheduler {
       if (Math.random() < this.params.crossoverRate) {
         [child1, child2] = twoPointCrossover(parent1, parent2);
       } else {
-        child1 = { genes: [...parent1.genes], fitness: 0 };
-        child2 = { genes: [...parent2.genes], fitness: 0 };
+        child1 = {
+          genes: parent1.genes.map((g) => ({
+            ...g,
+            roundGaps: [...g.roundGaps] as [number, number, number],
+          })),
+          fitness: 0,
+        };
+        child2 = {
+          genes: parent2.genes.map((g) => ({
+            ...g,
+            roundGaps: [...g.roundGaps] as [number, number, number],
+          })),
+          fitness: 0,
+        };
       }
 
       // Mutacao

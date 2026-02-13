@@ -19,7 +19,8 @@ export function OptimizationModal({ scenarios, originalLots, onApply, onClose }:
       >
         <h2>Cenarios Otimizados</h2>
         <p class="text-muted mb-lg">
-          Foram gerados {scenarios.length} cenario(s) otimizado(s). Escolha um para aplicar.
+          Foram gerados {scenarios.length} cenario(s) otimizado(s) atraves de multiplas
+          tentativas de otimizacao. Escolha o melhor para seu caso.
         </p>
 
         <div class="scenarios-grid">

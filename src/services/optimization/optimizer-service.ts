@@ -13,7 +13,7 @@ export class OptimizerService {
   async optimizeSchedule(
     lots: Lot[],
     maxD0Adjustment: number = 15,
-    timeLimitMs: number = 5000
+    timeLimitMs: number = 12000
   ): Promise<OptimizationScenario[]> {
     return new Promise((resolve, reject) => {
       // Criar worker

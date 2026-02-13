@@ -52,6 +52,7 @@ export interface GeneticParams {
   tournamentSize: number;
   timeLimitMs: number;
   maxD0Adjustment: number;
+  attemptsPerProfile: number;
 }
 
 /**
@@ -63,6 +64,7 @@ export const DEFAULT_GA_PARAMS: GeneticParams = {
   mutationRate: 0.15,
   crossoverRate: 0.8,
   tournamentSize: 3,
-  timeLimitMs: 5000,
+  timeLimitMs: 12000,
   maxD0Adjustment: 15,
+  attemptsPerProfile: 3,
 };

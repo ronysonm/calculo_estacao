@@ -15,11 +15,11 @@ import {
 } from './genetic-operators';
 import { evaluateChromosome, SCENARIO_PROFILES } from './fitness-calculator';
 import { nehInitialization } from './neh-heuristic';
-import { applyChromosome } from './diversity-selector';
+import { applyChromosome, selectDiverseTop4 } from './diversity-selector';
 
 /**
  * Scheduler baseado em Algoritmo Genetico
- * Executa 4 otimizacoes independentes, uma por perfil de cenario
+ * Executa multiplas otimizacoes por perfil e seleciona os 4 melhores cenarios diversos
  */
 export class GeneticScheduler {
   constructor(
@@ -29,15 +29,67 @@ export class GeneticScheduler {
 
   /**
    * Otimiza cronograma gerando 4 cenarios com objetivos distintos
+   * Executa multiplas tentativas por perfil para melhor exploracao
    */
   async optimize(): Promise<OptimizationScenario[]> {
     const profiles = SCENARIO_PROFILES;
-    const timePerProfile = Math.floor(this.params.timeLimitMs / profiles.length);
+    const attemptsPerProfile = this.params.attemptsPerProfile;
+    const totalAttempts = profiles.length * attemptsPerProfile;
+    const timePerAttempt = Math.floor(this.params.timeLimitMs / totalAttempts);
 
-    const scenarios: OptimizationScenario[] = [];
+    console.log(`🧬 Otimização iniciada: ${totalAttempts} tentativas`);
+    console.log(`⏱️ Tempo por tentativa: ${timePerAttempt}ms`);
 
+    // Pool de candidatos (cromossomos + perfil)
+    const candidates: Array<{
+      chromosome: Chromosome;
+      profile: ScenarioProfile;
+    }> = [];
+
+    // Executar múltiplas tentativas para cada perfil
     for (const profile of profiles) {
-      const scenario = await this.optimizeForProfile(profile, timePerProfile);
+      for (let attempt = 0; attempt < attemptsPerProfile; attempt++) {
+        const bestChromosome = await this.runGeneticAlgorithm(
+          profile.weights,
+          timePerAttempt
+        );
+
+        candidates.push({
+          chromosome: bestChromosome,
+          profile: profile,
+        });
+
+        // Yield para não bloquear UI
+        await this.yieldToUI();
+      }
+    }
+
+    console.log(`✅ Pool de candidatos: ${candidates.length}`);
+
+    // Selecionar top 4 mais diversos
+    const selectedChromosomes = selectDiverseTop4(
+      candidates.map((c) => c.chromosome),
+      this.lots,
+      10 // minDistance = 10 dias
+    );
+
+    console.log(`🎯 Selecionados: ${selectedChromosomes.length}`);
+
+    // Converter para cenários
+    const scenarios: OptimizationScenario[] = [];
+    for (const chromosome of selectedChromosomes) {
+      // Encontrar qual perfil gerou esse cromossomo
+      const candidate = candidates.find((c) => c.chromosome === chromosome);
+      const profile = candidate?.profile ?? profiles[0]!;
+
+      const adjustedLots = applyChromosome(chromosome, this.lots);
+      const scenario = OptimizationScenario.create(
+        profile.name,
+        adjustedLots,
+        chromosome.objectives!,
+        chromosome.fitness,
+        profile.description
+      );
       scenarios.push(scenario);
     }
 
@@ -45,14 +97,13 @@ export class GeneticScheduler {
   }
 
   /**
-   * Executa GA otimizando para um perfil especifico
+   * Executa uma rodada do AG e retorna o melhor cromossomo
    */
-  private async optimizeForProfile(
-    profile: ScenarioProfile,
+  private async runGeneticAlgorithm(
+    weights: ScenarioWeights,
     timeLimitMs: number
-  ): Promise<OptimizationScenario> {
+  ): Promise<Chromosome> {
     const startTime = Date.now();
-    const weights = profile.weights;
 
     // 1. Inicializar populacao
     let population = this.initializePopulation(weights);
@@ -71,19 +122,9 @@ export class GeneticScheduler {
       }
     }
 
-    // 4. Pegar o melhor cromossomo
+    // 4. Retornar o melhor
     population.sort((a, b) => b.fitness - a.fitness);
-    const best = population[0]!;
-
-    // 5. Converter para cenario
-    const adjustedLots = applyChromosome(best, this.lots);
-    return OptimizationScenario.create(
-      profile.name,
-      adjustedLots,
-      best.objectives!,
-      best.fitness,
-      profile.description
-    );
+    return population[0]!;
   }
 
   /**

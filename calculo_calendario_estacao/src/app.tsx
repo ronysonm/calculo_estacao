@@ -5,10 +5,11 @@
 import { useEffect } from 'preact/hooks';
 import { LotForm } from '@/components/Forms/LotForm';
 import { CalculationTable } from '@/components/Table/CalculationTable';
-import { initializeDefaultLots } from '@/state/signals/lots';
+import { initializeDefaultLots, lotsSignal } from '@/state/signals/lots';
 import { storage } from '@/services/persistence/storage';
 import { cycleStartSignal } from '@/state/signals/conflicts';
-import { formatDateBR } from '@/core/date-engine/utils';
+import { formatDateBR, daysBetween } from '@/core/date-engine/utils';
+import { DEFAULT_ROUNDS } from '@/domain/constants';
 import { useConflictSummary } from '@/hooks/useConflicts';
 import { usePersistence } from '@/hooks/usePersistence';
 import '@/styles/global.css';
@@ -30,6 +31,19 @@ export function App() {
 
   const conflictSummary = useConflictSummary();
   const cycleStart = cycleStartSignal.value;
+  const lots = lotsSignal.value;
+
+  // Total de dias do ciclo = maior dia do ciclo entre todos os lotes
+  let totalCycleDays = 0;
+  if (cycleStart && lots.length > 0) {
+    for (const lot of lots) {
+      const lotOffset = daysBetween(cycleStart, lot.d0);
+      const lastProtocolDay = lot.protocol.intervals[lot.protocol.intervals.length - 1] ?? 0;
+      const lastRoundOffset = lot.getRoundStartOffset(DEFAULT_ROUNDS - 1);
+      const lotMaxDay = lotOffset + lastRoundOffset + lastProtocolDay;
+      if (lotMaxDay > totalCycleDays) totalCycleDays = lotMaxDay;
+    }
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -37,7 +51,9 @@ export function App() {
       <div class="print-header" style={{ display: 'none' }}>
         <div class="print-header-title">Calendário de Estação IATF</div>
         {cycleStart && (
-          <div class="print-header-cycle">Início do ciclo: {formatDateBR(cycleStart)}</div>
+          <div class="print-header-cycle">
+            Início do ciclo: {formatDateBR(cycleStart)} | Total de dias: {totalCycleDays}
+          </div>
         )}
       </div>
 
@@ -61,6 +77,12 @@ export function App() {
                 <div class="cycle-start-bar" style={{ marginTop: 'var(--spacing-sm)' }}>
                   <span class="cycle-start-label">Inicio do ciclo:</span>
                   <span class="cycle-start-date">{formatDateBR(cycleStart)}</span>
+                  {totalCycleDays > 0 && (
+                    <>
+                      <span class="cycle-start-label" style={{ marginLeft: 'var(--spacing-md)' }}>Total de dias:</span>
+                      <span class="cycle-start-date">{totalCycleDays}</span>
+                    </>
+                  )}
                 </div>
               )}
             </div>

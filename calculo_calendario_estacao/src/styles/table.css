@@ -109,8 +109,10 @@
   border: 0.5px solid var(--color-border);
   background-color: #fafafa;
   width: 80px;
+  max-width: 80px;
   padding: var(--spacing-xs);
   writing-mode: horizontal-tb;
+  overflow: hidden;
 }
 
 /* ============ D0 Controls (cycle start adjustment) ============ */
@@ -119,6 +121,9 @@
   margin-bottom: 4px;
   cursor: pointer;
   transition: color 0.15s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .lot-name-text:hover {

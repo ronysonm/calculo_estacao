@@ -126,6 +126,30 @@ export class DateOnly {
   }
 
   /**
+   * Add days and return new DateOnly (timezone-safe using UTC)
+   */
+  addDays(days: number): DateOnly {
+    const date = new Date(Date.UTC(this.year, this.month - 1, this.day));
+    date.setUTCDate(date.getUTCDate() + days);
+
+    return DateOnly.create(
+      date.getUTCFullYear(),
+      date.getUTCMonth() + 1,
+      date.getUTCDate()
+    );
+  }
+
+  /**
+   * Calculate days from other to this (this - other)
+   * Positive if this is after other, negative if before
+   */
+  daysSince(other: DateOnly): number {
+    const thisMs = Date.UTC(this.year, this.month - 1, this.day);
+    const otherMs = Date.UTC(other.year, other.month - 1, other.day);
+    return Math.round((thisMs - otherMs) / (1000 * 60 * 60 * 24));
+  }
+
+  /**
    * Serialize to JSON
    */
   toJSON(): { year: number; month: number; day: number } {

@@ -266,3 +266,115 @@ label {
   text-align: center;
   color: var(--color-text);
 }
+
+/* ============ Optimization Modal ============ */
+.optimization-modal {
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  align-items: stretch;
+}
+
+.scenarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.scenario-card {
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  background: var(--color-bg-secondary);
+}
+
+.scenario-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--color-primary);
+}
+
+.scenario-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.metric-label {
+  color: var(--color-text-secondary);
+}
+
+.metric-value {
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.scenario-changes {
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+.scenario-changes h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.scenario-changes ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.scenario-changes li {
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.text-success {
+  color: var(--color-success);
+}
+
+.text-error {
+  color: var(--color-danger);
+}
+
+.text-warning {
+  color: var(--color-warning);
+}
+
+.text-muted {
+  color: var(--color-text-secondary);
+}
+
+.w-full {
+  width: 100%;
+}
+
+.mt-md {
+  margin-top: 0.75rem;
+}
+
+.mt-lg {
+  margin-top: 1.5rem;
+}
+
+.mb-lg {
+  margin-bottom: 1.5rem;
+}
+
+.font-bold {
+  font-weight: 700;
+}

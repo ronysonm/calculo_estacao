@@ -19,6 +19,9 @@ export default defineConfig({
       '@/styles': path.resolve(__dirname, './src/styles'),
     },
   },
+  worker: {
+    format: 'es',
+  },
   test: {
     globals: true,
     environment: 'jsdom',

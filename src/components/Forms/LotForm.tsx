@@ -6,11 +6,22 @@
  */
 
 import { useState } from 'preact/hooks';
-import { lotsSignal, addLot } from '@/state/signals/lots';
+import { lotsSignal, addLot, setLots } from '@/state/signals/lots';
 import { DateOnly } from '@/domain/value-objects/DateOnly';
 import { addDaysToDateOnly } from '@/core/date-engine/utils';
 import { PREDEFINED_PROTOCOLS } from '@/domain/constants';
 import { ExportDialog } from '@/components/Export/ExportDialog';
+import { optimizerService } from '@/services/optimization/optimizer-service';
+import {
+  isOptimizingSignal,
+  optimizationScenariosSignal,
+  maxD0AdjustmentSignal,
+  setMaxD0Adjustment,
+  setOptimizationScenarios,
+  clearOptimizationScenarios,
+} from '@/state/signals/optimization';
+import { OptimizationModal } from '@/components/Optimization/OptimizationModal';
+import { OptimizationScenario } from '@/domain/value-objects/OptimizationScenario';
 
 function getNextDefaultD0(): string {
   const lots = lotsSignal.value;
@@ -18,11 +29,16 @@ function getNextDefaultD0(): string {
     const lastD0 = lots[lots.length - 1]!.d0;
     return addDaysToDateOnly(lastD0, 1).toISOString();
   }
-  return new Date().toISOString().split('T')[0]!;
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  return d.toISOString().split('T')[0]!;
 }
 
 export function LotForm() {
   const lots = lotsSignal.value;
+  const isOptimizing = isOptimizingSignal.value;
+  const scenarios = optimizationScenariosSignal.value;
+  const maxD0Adjustment = maxD0AdjustmentSignal.value;
 
   const [lotName, setLotName] = useState('');
   const [d0Date, setD0Date] = useState(getNextDefaultD0);
@@ -53,6 +69,49 @@ export function LotForm() {
     setD0Date(addDaysToDateOnly(d0, 1).toISOString());
   };
 
+  /**
+   * Handler de otimizacao
+   */
+  const handleOptimize = async () => {
+    if (lots.length < 2) {
+      alert('Adicione pelo menos 2 lotes para otimizar.');
+      return;
+    }
+
+    try {
+      isOptimizingSignal.value = true;
+      clearOptimizationScenarios();
+
+      const optimizedScenarios = await optimizerService.optimizeSchedule(
+        lots,
+        maxD0Adjustment,
+        5000
+      );
+
+      setOptimizationScenarios(optimizedScenarios);
+    } catch (error) {
+      console.error('Erro na otimizacao:', error);
+      alert('Erro ao otimizar. Tente novamente.');
+    } finally {
+      isOptimizingSignal.value = false;
+    }
+  };
+
+  /**
+   * Handler de aplicacao de cenario
+   */
+  const handleApplyScenario = (scenario: OptimizationScenario) => {
+    setLots(scenario.lots);
+    clearOptimizationScenarios();
+  };
+
+  /**
+   * Handler de fechamento do modal
+   */
+  const handleCloseModal = () => {
+    clearOptimizationScenarios();
+  };
+
   return (
     <div class="card">
       <h2>Gerenciar Lotes</h2>
@@ -66,7 +125,7 @@ export function LotForm() {
             type="text"
             value={lotName}
             onInput={(e) => setLotName((e.target as HTMLInputElement).value)}
-            placeholder="Ex: Primíparas"
+            placeholder="Ex: Primiparas"
           />
         </div>
 
@@ -103,8 +162,45 @@ export function LotForm() {
       {/* Tools */}
       {lots.length > 0 && (
         <div class="flex flex-col gap-sm mb-lg">
+          {/* Controle de ajuste maximo */}
+          <div>
+            <label htmlFor="maxAdjustment">
+              Ajuste maximo de D0 ({maxD0Adjustment} dias)
+            </label>
+            <input
+              id="maxAdjustment"
+              type="range"
+              min="1"
+              max="30"
+              value={maxD0Adjustment}
+              onInput={(e) =>
+                setMaxD0Adjustment(Number((e.target as HTMLInputElement).value))
+              }
+            />
+          </div>
+
+          {/* Botao otimizar */}
+          <button
+            type="button"
+            class="btn-primary"
+            onClick={handleOptimize}
+            disabled={lots.length < 2 || isOptimizing}
+          >
+            {isOptimizing ? 'Otimizando...' : 'Otimizar Calendario'}
+          </button>
+
           <ExportDialog />
         </div>
+      )}
+
+      {/* Modal de cenarios otimizados */}
+      {scenarios.length > 0 && (
+        <OptimizationModal
+          scenarios={scenarios}
+          originalLots={lots}
+          onApply={handleApplyScenario}
+          onClose={handleCloseModal}
+        />
       )}
 
       {showValidationModal && (

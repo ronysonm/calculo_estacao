@@ -22,7 +22,9 @@ export const lotsSignal = signal<Lot[]>([]);
  * All lots start with today's date and default protocol
  */
 export function initializeDefaultLots(): void {
-  const today = DateOnly.fromDate(new Date());
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() + 30);
+  const today = DateOnly.fromDate(startDate);
   const defaultLots: Lot[] = [];
 
   for (let i = 0; i < DEFAULT_LOT_NAMES.length; i++) {

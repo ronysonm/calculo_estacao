@@ -23,7 +23,7 @@
 
 .round-headers-spacer {
   /* Space for lot name + row label columns */
-  min-width: 170px;
+  min-width: 130px;
   flex-shrink: 0;
 }
 
@@ -38,7 +38,7 @@
 }
 
 .round-header-gap-spacer {
-  min-width: 56px;
+  min-width: 44px;
   flex-shrink: 0;
 }
 
@@ -69,11 +69,11 @@
 }
 
 .lot-label-header {
-  width: 80px;
+  width: 60px;
 }
 
 .row-label-header {
-  width: 90px;
+  width: 70px;
 }
 
 .round-header-row {
@@ -90,12 +90,12 @@
 }
 
 .protocol-header-cell {
-  min-width: 90px;
+  min-width: 74px;
 }
 
 .gap-header-cell {
-  width: 56px;
-  min-width: 56px;
+  width: 44px;
+  min-width: 44px;
   border: none !important;
   background: transparent !important;
 }
@@ -103,16 +103,15 @@
 /* ============ Lot Name Cell ============ */
 .lot-name-cell {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.875rem;
   text-align: center;
   vertical-align: middle;
   border: 0.5px solid var(--color-border);
   background-color: #fafafa;
-  width: 80px;
-  max-width: 80px;
+  width: 60px;
+  max-width: 60px;
   padding: var(--spacing-xs);
   writing-mode: horizontal-tb;
-  overflow: hidden;
 }
 
 /* ============ D0 Controls (cycle start adjustment) ============ */
@@ -135,7 +134,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   margin-top: 2px;
 }
 
@@ -143,8 +142,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 20px;
+  width: 20px;
+  height: 18px;
   padding: 0;
   font-size: 0.625rem;
   font-weight: 600;
@@ -165,7 +164,7 @@
 }
 
 .d0-value {
-  font-size: 0.625rem;
+  font-size: 0.5625rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -178,7 +177,7 @@
   border: 0.5px solid var(--color-border);
   background-color: #fafafa;
   padding: var(--spacing-xs);
-  width: 90px;
+  width: 70px;
   border-left: 0.5px solid var(--color-border);
 }
 
@@ -191,9 +190,9 @@
   text-align: center;
   vertical-align: middle;
   border: 0.5px solid var(--color-border);
-  padding: 3px 4px;
+  padding: 2px 3px;
   font-family: var(--font-mono);
-  min-width: 90px;
+  min-width: 74px;
 }
 
 .dia-cell {
@@ -202,7 +201,7 @@
 }
 
 .date-value-cell {
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 
@@ -214,8 +213,8 @@
 
 /* ============ Gap Controls ============ */
 .gap-cell {
-  width: 56px;
-  min-width: 56px;
+  width: 44px;
+  min-width: 44px;
   border: none;
   vertical-align: middle;
   padding: 0;
@@ -233,7 +232,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
+  width: 36px;
   padding: 2px 2px;
   font-size: 0.6875rem;
   font-weight: 600;

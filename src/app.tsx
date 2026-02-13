@@ -2,7 +2,7 @@
  * Main App Component
  */
 
-import { useEffect } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { LotForm } from '@/components/Forms/LotForm';
 import { CalculationTable } from '@/components/Table/CalculationTable';
 import { initializeDefaultLots, lotsSignal } from '@/state/signals/lots';
@@ -28,6 +28,13 @@ export function App() {
       }
     }, 100);
   }, []);
+
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  const handleReset = () => {
+    initializeDefaultLots();
+    setShowResetConfirm(false);
+  };
 
   const conflictSummary = useConflictSummary();
   const cycleStart = cycleStartSignal.value;
@@ -118,14 +125,50 @@ export function App() {
         {/* Sidebar */}
         <aside
           style={{
-            width: '350px',
+            width: '250px',
             borderRight: '1px solid var(--color-border)',
             backgroundColor: 'var(--color-bg)',
             overflowY: 'auto',
-            padding: 'var(--spacing-lg)',
+            padding: 'var(--spacing-sm)',
           }}
         >
           <LotForm />
+
+          <div class="card" style={{ marginTop: 'var(--spacing-md)' }}>
+            <button
+              type="button"
+              class="btn-secondary w-full"
+              onClick={() => setShowResetConfirm(true)}
+            >
+              Resetar Lotes
+            </button>
+          </div>
+
+          {showResetConfirm && (
+            <div class="modal-overlay" onClick={() => setShowResetConfirm(false)}>
+              <div class="modal" onClick={(e) => e.stopPropagation()}>
+                <p class="modal-message">
+                  Tem certeza que deseja resetar todos os lotes para o estado inicial?
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--spacing-sm)' }}>
+                  <button
+                    type="button"
+                    class="btn-secondary"
+                    onClick={() => setShowResetConfirm(false)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    style={{ backgroundColor: 'var(--color-danger)', color: 'white', border: 'none', padding: 'var(--spacing-sm) var(--spacing-md)', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                    onClick={handleReset}
+                  >
+                    Confirmar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </aside>
 
         {/* Table area */}
@@ -145,7 +188,7 @@ export function App() {
         style={{
           backgroundColor: 'white',
           borderTop: '1px solid var(--color-border)',
-          padding: 'var(--spacing-md) var(--spacing-lg)',
+          padding: 'var(--spacing-xs) var(--spacing-md)',
           textAlign: 'center',
         }}
       >

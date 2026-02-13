@@ -162,32 +162,35 @@ export function LotForm() {
       {/* Tools */}
       {lots.length > 0 && (
         <div class="flex flex-col gap-sm mb-lg">
-          {/* Controle de ajuste maximo */}
-          <div>
-            <label htmlFor="maxAdjustment">
-              Ajuste maximo de D0 ({maxD0Adjustment} dias)
-            </label>
-            <input
-              id="maxAdjustment"
-              type="range"
-              min="1"
-              max="30"
-              value={maxD0Adjustment}
-              onInput={(e) =>
-                setMaxD0Adjustment(Number((e.target as HTMLInputElement).value))
-              }
-            />
-          </div>
+          <div class="flex flex-col gap-sm">
+            <h3>Otimizar</h3>
 
-          {/* Botao otimizar */}
-          <button
-            type="button"
-            class="btn-primary"
-            onClick={handleOptimize}
-            disabled={lots.length < 2 || isOptimizing}
-          >
-            {isOptimizing ? 'Otimizando...' : 'Otimizar Calendario'}
-          </button>
+            {/* Controle de ajuste maximo */}
+            <div>
+              <label htmlFor="maxAdjustment">
+                Ajuste maximo de D0 ({maxD0Adjustment} dias)
+              </label>
+              <input
+                id="maxAdjustment"
+                type="range"
+                min="1"
+                max="30"
+                value={maxD0Adjustment}
+                onInput={(e) =>
+                  setMaxD0Adjustment(Number((e.target as HTMLInputElement).value))
+                }
+              />
+            </div>
+
+            <button
+              type="button"
+              class="btn-primary"
+              onClick={handleOptimize}
+              disabled={lots.length < 2 || isOptimizing}
+            >
+              {isOptimizing ? 'Otimizando...' : 'Otimizar Calendario'}
+            </button>
+          </div>
 
           <ExportDialog />
         </div>

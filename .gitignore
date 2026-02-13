@@ -7,7 +7,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Dependencies
 node_modules
 dist
 dist-ssr
@@ -18,54 +17,28 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# TypeScript
-*.tsbuildinfo
-
 # Environment variables
 .env
 .env.local
 .env.*.local
 
-# OS files
-.DS_Store
-Thumbs.db
+# Testing
+coverage
+*.lcov
 
-# Personal/temp directories
-.calculo_estacao/
-calculo_calendario_estacao/
-calculo_estacao/
-calculo_estacao-v2/
-FazCaruaru-Ponto/
-FazCaruaru-Ponto-v2/
-mail-archiver-automation/
+# Build artifacts
+build
+.cache
 
-# User-specific
-.bash_history
-.bashrc
-.bash_logout
-.profile
-.zshrc
-.gitconfig
-.cache/
-.config/
-.fonts/
-.landscape/
-.local/
-.motd_shown
-.npm/
-.nvm/
-.pki/
-.pyenv/
-.python_history
-.ssh/
-.sudo_as_admin_successful
-.vscode-server/
-.wget-hsts
-.claude.json
-.claude.json.backup.*
+# TypeScript
+*.tsbuildinfo
+
+# Playwright MCP
+.playwright-mcp/

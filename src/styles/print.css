@@ -44,6 +44,17 @@
     -webkit-print-color-adjust: exact;
   }
 
+  /* Prevent page breaks inside rows */
+  .tabulator-row {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Repeat header on each page */
+  .tabulator-header {
+    display: table-header-group !important;
+  }
+
   /* Ensure conflict colors print */
   .conflict-sunday,
   .conflict-overlap,
@@ -80,6 +91,21 @@
     font-size: 10pt;
     color: #333;
     margin-top: 2px;
+  }
+
+  /* Table styling for print */
+  .tabulator {
+    font-size: 10pt;
+  }
+
+  .tabulator-cell {
+    border: 1px solid #000 !important;
+  }
+
+  .tabulator-header {
+    background-color: #f3f4f6 !important;
+    border: 1px solid #000 !important;
+    font-weight: bold;
   }
 
   /* Keep legend attached to table */

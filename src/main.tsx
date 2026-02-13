@@ -1,10 +1,14 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import './index.css';
-import App from './App';
+/**
+ * Application Entry Point
+ */
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+import { render } from 'preact';
+import { App } from './app';
+
+const rootElement = document.getElementById('app');
+
+if (rootElement) {
+  render(<App />, rootElement);
+} else {
+  console.error('Root element #app not found');
+}

@@ -1,0 +1,115 @@
+/**
+ * Print Styles
+ *
+ * CRITICAL: Uses page-break-inside: avoid to prevent Pitfall #6 (cut-off rows)
+ */
+
+@media print {
+  /* Hide UI elements */
+  aside,
+  header,
+  button,
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .conflict-summary {
+    display: none !important;
+  }
+
+  /* Hide footer legend on print */
+  footer {
+    display: none !important;
+  }
+
+  /* Expand table to full width */
+  main {
+    padding: 0 !important;
+  }
+
+  .calculation-table-container {
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: landscape;
+    margin: 1cm;
+  }
+
+  body {
+    background: white;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Prevent page breaks inside rows */
+  .tabulator-row {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Repeat header on each page */
+  .tabulator-header {
+    display: table-header-group !important;
+  }
+
+  /* Ensure conflict colors print */
+  .conflict-sunday,
+  .conflict-overlap,
+  .conflict-multiple {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* Add page numbers */
+  @page {
+    @bottom-right {
+      content: "Página " counter(page) " de " counter(pages);
+    }
+  }
+
+  /* Hide CSS title - replaced by .print-header element */
+  body::before {
+    display: none !important;
+  }
+
+  /* Show print-only header */
+  .print-header {
+    display: block !important;
+    text-align: center;
+    margin-bottom: 0.3cm;
+  }
+
+  .print-header-title {
+    font-size: 14pt;
+    font-weight: bold;
+  }
+
+  .print-header-cycle {
+    font-size: 10pt;
+    color: #333;
+    margin-top: 2px;
+  }
+
+  /* Table styling for print */
+  .tabulator {
+    font-size: 10pt;
+  }
+
+  .tabulator-cell {
+    border: 1px solid #000 !important;
+  }
+
+  .tabulator-header {
+    background-color: #f3f4f6 !important;
+    border: 1px solid #000 !important;
+    font-weight: bold;
+  }
+
+  /* Keep legend attached to table */
+  body::after {
+    display: none !important;
+  }
+}

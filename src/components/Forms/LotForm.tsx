@@ -27,12 +27,13 @@ export function LotForm() {
   const [lotName, setLotName] = useState('');
   const [d0Date, setD0Date] = useState(getNextDefaultD0);
   const [selectedProtocolId, setSelectedProtocolId] = useState(PREDEFINED_PROTOCOLS[0]!.id);
+  const [showValidationModal, setShowValidationModal] = useState(false);
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
 
     if (!lotName.trim()) {
-      alert('Por favor, insira um nome para o lote.');
+      setShowValidationModal(true);
       return;
     }
 
@@ -106,6 +107,16 @@ export function LotForm() {
         </div>
       )}
 
+      {showValidationModal && (
+        <div class="modal-overlay" onClick={() => setShowValidationModal(false)}>
+          <div class="modal" onClick={(e) => e.stopPropagation()}>
+            <p class="modal-message">Por favor, insira um nome para o lote.</p>
+            <button type="button" class="btn-primary" onClick={() => setShowValidationModal(false)}>
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

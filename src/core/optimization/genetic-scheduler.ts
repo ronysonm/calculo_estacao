@@ -31,7 +31,7 @@ export class GeneticScheduler {
    * Otimiza cronograma gerando 4 cenarios com objetivos distintos
    * Executa multiplas tentativas por perfil para melhor exploracao
    */
-  async optimize(): Promise<OptimizationScenario[]> {
+  async optimize(): Promise<{ scenarios: OptimizationScenario[]; totalCombinations: number }> {
     const profiles = SCENARIO_PROFILES;
     const attemptsPerProfile = this.params.attemptsPerProfile;
     const totalAttempts = profiles.length * attemptsPerProfile;
@@ -39,6 +39,8 @@ export class GeneticScheduler {
 
     console.log(`🧬 Otimização iniciada: ${totalAttempts} tentativas`);
     console.log(`⏱️ Tempo por tentativa: ${timePerAttempt}ms`);
+
+    let totalCombinations = 0;
 
     // Pool de candidatos (cromossomos + perfil)
     const candidates: Array<{
@@ -49,10 +51,12 @@ export class GeneticScheduler {
     // Executar múltiplas tentativas para cada perfil
     for (const profile of profiles) {
       for (let attempt = 0; attempt < attemptsPerProfile; attempt++) {
-        const bestChromosome = await this.runGeneticAlgorithm(
+        const { bestChromosome, evaluatedCount } = await this.runGeneticAlgorithm(
           profile.weights,
           timePerAttempt
         );
+
+        totalCombinations += evaluatedCount;
 
         candidates.push({
           chromosome: bestChromosome,
@@ -65,6 +69,7 @@ export class GeneticScheduler {
     }
 
     console.log(`✅ Pool de candidatos: ${candidates.length}`);
+    console.log(`🔢 Total combinacoes: ${totalCombinations}`);
 
     // Selecionar top 4 mais diversos
     const selectedChromosomes = selectDiverseTop4(
@@ -93,7 +98,7 @@ export class GeneticScheduler {
       scenarios.push(scenario);
     }
 
-    return scenarios;
+    return { scenarios, totalCombinations };
   }
 
   /**
@@ -102,11 +107,13 @@ export class GeneticScheduler {
   private async runGeneticAlgorithm(
     weights: ScenarioWeights,
     timeLimitMs: number
-  ): Promise<Chromosome> {
+  ): Promise<{ bestChromosome: Chromosome; evaluatedCount: number }> {
     const startTime = Date.now();
+    let evaluatedCount = 0;
 
     // 1. Inicializar populacao
     let population = this.initializePopulation(weights);
+    evaluatedCount += population.length;
 
     // 2. Avaliar populacao inicial
     this.evaluatePopulation(population, weights);
@@ -115,6 +122,10 @@ export class GeneticScheduler {
     let generation = 0;
     while (Date.now() - startTime < timeLimitMs) {
       population = this.evolveGeneration(population, weights);
+      // Na evolucao, geramos params.populationSize novos individuos (elitismo mantem, mas reavaliamos ou novos sao criados)
+      // Simplificacao: consideramos que avaliamos populationSize por geracao
+      evaluatedCount += this.params.populationSize;
+      
       generation++;
 
       if (generation % 5 === 0) {
@@ -124,7 +135,7 @@ export class GeneticScheduler {
 
     // 4. Retornar o melhor
     population.sort((a, b) => b.fitness - a.fitness);
-    return population[0]!;
+    return { bestChromosome: population[0]!, evaluatedCount };
   }
 
   /**

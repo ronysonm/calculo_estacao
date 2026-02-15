@@ -5,7 +5,7 @@
  * Displays current lots with ability to remove them.
  */
 
-import { useState } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { lotsSignal, addLot, setLots } from '@/state/signals/lots';
 import { DateOnly } from '@/domain/value-objects/DateOnly';
 import { addDaysToDateOnly } from '@/core/date-engine/utils';
@@ -44,6 +44,37 @@ export function LotForm() {
   const [d0Date, setD0Date] = useState(getNextDefaultD0);
   const [selectedProtocolId, setSelectedProtocolId] = useState(PREDEFINED_PROTOCOLS[0]!.id);
   const [showValidationModal, setShowValidationModal] = useState(false);
+  
+  // Estados para UI de otimizacao
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [optimizeMessage, setOptimizeMessage] = useState('Iniciando otimização...');
+
+  // Efeito do timer
+  useEffect(() => {
+    let interval: number;
+    if (isOptimizing) {
+      setTimeLeft(30);
+      interval = window.setInterval(() => {
+        setTimeLeft((prev) => {
+          const newState = prev > 0 ? prev - 1 : 0;
+          
+          // Atualizar mensagem baseado no tempo restante
+          if (newState > 20) {
+            setOptimizeMessage('Inicializando algoritmo genético...');
+          } else if (newState > 10) {
+            setOptimizeMessage('Simulando milhares de combinações de datas...');
+          } else if (newState > 0) {
+            setOptimizeMessage('Refinando os 4 melhores cenários para você...');
+          } else {
+            setOptimizeMessage('Finalizando cálculos...');
+          }
+          
+          return newState;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isOptimizing]);
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
@@ -82,13 +113,13 @@ export function LotForm() {
       isOptimizingSignal.value = true;
       clearOptimizationScenarios();
 
-      const optimizedScenarios = await optimizerService.optimizeSchedule(
+      const { scenarios, totalCombinations } = await optimizerService.optimizeSchedule(
         lots,
         maxD0Adjustment,
-        5000
+        30000 // 30 segundos
       );
 
-      setOptimizationScenarios(optimizedScenarios);
+      setOptimizationScenarios(scenarios, { totalCombinations });
     } catch (error) {
       console.error('Erro na otimizacao:', error);
       alert('Erro ao otimizar. Tente novamente.');
@@ -188,7 +219,13 @@ export function LotForm() {
               onClick={handleOptimize}
               disabled={lots.length < 2 || isOptimizing}
             >
-              {isOptimizing ? 'Otimizando...' : 'Otimizar Calendario'}
+              {isOptimizing ? (
+                <span class="flex items-center gap-sm justify-center">
+                  <span class="animate-spin">⏳</span> {timeLeft}s - {optimizeMessage}
+                </span>
+              ) : (
+                'Otimizar Calendario'
+              )}
             </button>
           </div>
 

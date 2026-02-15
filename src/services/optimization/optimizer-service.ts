@@ -13,8 +13,8 @@ export class OptimizerService {
   async optimizeSchedule(
     lots: Lot[],
     maxD0Adjustment: number = 15,
-    timeLimitMs: number = 12000
-  ): Promise<OptimizationScenario[]> {
+    timeLimitMs: number = 30000
+  ): Promise<{ scenarios: OptimizationScenario[]; totalCombinations: number }> {
     return new Promise((resolve, reject) => {
       // Criar worker
       this.worker = new Worker(
@@ -50,7 +50,10 @@ export class OptimizerService {
             )
           );
 
-          resolve(scenarios);
+          resolve({
+            scenarios,
+            totalCombinations: e.data.totalCombinations || 0,
+          });
         } else {
           reject(new Error(e.data.error || 'Erro na otimizacao'));
         }

@@ -1,5 +1,6 @@
 import { OptimizationScenario } from '@/domain/value-objects/OptimizationScenario';
 import { Lot } from '@/domain/value-objects/Lot';
+import { optimizationStatsSignal } from '@/state/signals/optimization';
 
 interface Props {
   scenarios: OptimizationScenario[];
@@ -11,6 +12,8 @@ interface Props {
 export function OptimizationModal({ scenarios, originalLots, onApply, onClose }: Props) {
   if (scenarios.length === 0) return null;
 
+  const stats = optimizationStatsSignal.value;
+
   return (
     <div class="modal-overlay" onClick={onClose}>
       <div
@@ -18,6 +21,15 @@ export function OptimizationModal({ scenarios, originalLots, onApply, onClose }:
         onClick={(e) => e.stopPropagation()}
       >
         <h2>Cenarios Otimizados</h2>
+        
+        {stats && (
+          <div class="bg-blue-50 p-sm rounded mb-md text-center border border-blue-200">
+            <p class="text-blue-800 font-bold text-lg m-0">
+              🚀 {stats.totalCombinations.toLocaleString()} combinações analisadas!
+            </p>
+          </div>
+        )}
+
         <p class="text-muted mb-lg">
           Foram gerados {scenarios.length} cenario(s) otimizado(s) atraves de multiplas
           tentativas de otimizacao. Escolha o melhor para seu caso.

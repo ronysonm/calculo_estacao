@@ -64,7 +64,7 @@ export const DEFAULT_GA_PARAMS: GeneticParams = {
   mutationRate: 0.15,
   crossoverRate: 0.8,
   tournamentSize: 3,
-  timeLimitMs: 12000,
+  timeLimitMs: 30000,
   maxD0Adjustment: 15,
   attemptsPerProfile: 3,
 };

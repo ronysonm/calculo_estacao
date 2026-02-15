@@ -31,7 +31,7 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
     const scheduler = new GeneticScheduler(lots, params);
 
     // Otimizar
-    const scenarios = await scheduler.optimize();
+    const { scenarios, totalCombinations } = await scheduler.optimize();
 
     // Serializar e enviar resultado
     const serializedScenarios = scenarios.map((scenario) => ({
@@ -45,6 +45,7 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
     self.postMessage({
       success: true,
       scenarios: serializedScenarios,
+      totalCombinations,
     });
   } catch (error) {
     self.postMessage({

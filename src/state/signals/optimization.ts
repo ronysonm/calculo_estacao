@@ -6,6 +6,7 @@ import { OptimizationScenario } from '@/domain/value-objects/OptimizationScenari
  */
 export const isOptimizingSignal = signal<boolean>(false);
 export const optimizationScenariosSignal = signal<OptimizationScenario[]>([]);
+export const optimizationStatsSignal = signal<{ totalCombinations: number } | null>(null);
 export const maxD0AdjustmentSignal = signal<number>(15);
 
 /**
@@ -13,13 +14,18 @@ export const maxD0AdjustmentSignal = signal<number>(15);
  */
 export function clearOptimizationScenarios(): void {
   optimizationScenariosSignal.value = [];
+  optimizationStatsSignal.value = null;
 }
 
 /**
  * Definir cenarios otimizados
  */
-export function setOptimizationScenarios(scenarios: OptimizationScenario[]): void {
+export function setOptimizationScenarios(
+  scenarios: OptimizationScenario[],
+  stats: { totalCombinations: number } | null = null
+): void {
   optimizationScenariosSignal.value = scenarios;
+  optimizationStatsSignal.value = stats;
 }
 
 /**

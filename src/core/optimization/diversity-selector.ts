@@ -1,5 +1,10 @@
 import { Lot } from '@/domain/value-objects/Lot';
 import { Chromosome } from './types';
+import {
+  createEvaluationContext,
+  EvaluationContext,
+  mapChromosomeGenesByLotIndex,
+} from './fitness-calculator';
 
 /**
  * Calcula distancia entre dois cronogramas (soma de diferencas de D0 + gaps)
@@ -28,10 +33,14 @@ export function scheduleDistance(lots1: Lot[], lots2: Lot[]): number {
  */
 export function applyChromosome(
   chromosome: Chromosome,
-  baseLots: Lot[]
+  baseLots: Lot[],
+  context?: EvaluationContext
 ): Lot[] {
-  return baseLots.map((lot) => {
-    const gene = chromosome.genes.find((g) => g.lotId === lot.id);
+  const evaluationContext = context ?? createEvaluationContext(baseLots, 0);
+  const genesByIndex = mapChromosomeGenesByLotIndex(chromosome, evaluationContext);
+
+  return baseLots.map((lot, lotIndex) => {
+    const gene = genesByIndex[lotIndex];
     if (!gene) return lot;
 
     let adjusted = lot;
@@ -56,26 +65,35 @@ export function applyChromosome(
 export function selectDiverseTop4(
   population: Chromosome[],
   baseLots: Lot[],
-  minDistance: number = 10
+  minDistance: number = 10,
+  context?: EvaluationContext
 ): Chromosome[] {
   // Ordenar por fitness (melhor primeiro)
   const sorted = [...population].sort((a, b) => b.fitness - a.fitness);
+  const evaluationContext = context ?? createEvaluationContext(baseLots, 0);
 
-  if (sorted.length === 0) return [];
-  if (sorted.length === 1) return [sorted[0]!];
+  const prepared = sorted.map((chromosome) => ({
+    chromosome,
+    genesByIndex: mapChromosomeGenesByLotIndex(chromosome, evaluationContext),
+  }));
 
-  const selected: Chromosome[] = [sorted[0]!];
-  const selectedLots: Lot[][] = [applyChromosome(sorted[0]!, baseLots)];
+  if (prepared.length === 0) return [];
+  if (prepared.length === 1) return [prepared[0]!.chromosome];
+
+  const selected = [prepared[0]!];
 
   // Buscar 2a, 3a e 4a solucoes diversas
-  for (const candidate of sorted.slice(1)) {
-    const candidateLots = applyChromosome(candidate, baseLots);
+  for (const candidate of prepared.slice(1)) {
 
     // Verificar distancia minima de todas as selecionadas
     let isDiverse = true;
 
-    for (const selectedSchedule of selectedLots) {
-      const dist = scheduleDistance(candidateLots, selectedSchedule);
+    for (const selectedCandidate of selected) {
+      const dist = chromosomeDistance(
+        candidate.genesByIndex,
+        selectedCandidate.genesByIndex,
+        evaluationContext
+      );
       if (dist < minDistance) {
         isDiverse = false;
         break;
@@ -84,17 +102,54 @@ export function selectDiverseTop4(
 
     if (isDiverse) {
       selected.push(candidate);
-      selectedLots.push(candidateLots);
 
       if (selected.length === 4) break;
     }
   }
 
   // Se nao encontramos 4 diversos, preencher com proximos melhores
-  while (selected.length < 4 && selected.length < sorted.length) {
-    const next = sorted[selected.length];
+  while (selected.length < 4 && selected.length < prepared.length) {
+    const next = prepared[selected.length];
     if (next) selected.push(next);
   }
 
-  return selected;
+  return selected.map((entry) => entry.chromosome);
+}
+
+function chromosomeDistance(
+  genesA: Array<{
+    d0Offset: number;
+    roundGaps: [number, number, number];
+  } | undefined>,
+  genesB: Array<{
+    d0Offset: number;
+    roundGaps: [number, number, number];
+  } | undefined>,
+  context: EvaluationContext
+): number {
+  let totalDiff = 0;
+
+  for (let lotIndex = 0; lotIndex < context.lotIds.length; lotIndex++) {
+    const geneA = genesA[lotIndex];
+    const geneB = genesB[lotIndex];
+
+    const d0A = geneA?.d0Offset ?? 0;
+    const d0B = geneB?.d0Offset ?? 0;
+    totalDiff += Math.abs(d0A - d0B);
+
+    const baseGapIndex = lotIndex * 3;
+    const aGap0 = geneA?.roundGaps[0] ?? context.baseRoundGaps[baseGapIndex] ?? 22;
+    const aGap1 = geneA?.roundGaps[1] ?? context.baseRoundGaps[baseGapIndex + 1] ?? 22;
+    const aGap2 = geneA?.roundGaps[2] ?? context.baseRoundGaps[baseGapIndex + 2] ?? 22;
+
+    const bGap0 = geneB?.roundGaps[0] ?? context.baseRoundGaps[baseGapIndex] ?? 22;
+    const bGap1 = geneB?.roundGaps[1] ?? context.baseRoundGaps[baseGapIndex + 1] ?? 22;
+    const bGap2 = geneB?.roundGaps[2] ?? context.baseRoundGaps[baseGapIndex + 2] ?? 22;
+
+    totalDiff += Math.abs(aGap0 - bGap0);
+    totalDiff += Math.abs(aGap1 - bGap1);
+    totalDiff += Math.abs(aGap2 - bGap2);
+  }
+
+  return totalDiff;
 }

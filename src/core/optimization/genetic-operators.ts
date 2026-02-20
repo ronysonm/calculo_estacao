@@ -5,12 +5,13 @@ import { Chromosome, Gene } from './types';
  */
 export function tournamentSelection(
   population: Chromosome[],
-  tournamentSize: number
+  tournamentSize: number,
+  rng: () => number = Math.random
 ): Chromosome {
   const tournament: Chromosome[] = [];
 
   for (let i = 0; i < tournamentSize; i++) {
-    const idx = Math.floor(Math.random() * population.length);
+    const idx = Math.floor(rng() * population.length);
     tournament.push(population[idx]!);
   }
 
@@ -31,12 +32,13 @@ function cloneGene(g: Gene): Gene {
  */
 export function twoPointCrossover(
   parent1: Chromosome,
-  parent2: Chromosome
+  parent2: Chromosome,
+  rng: () => number = Math.random
 ): [Chromosome, Chromosome] {
   const len = parent1.genes.length;
 
-  const point1 = Math.floor(Math.random() * len);
-  const point2 = Math.floor(Math.random() * len);
+  const point1 = Math.floor(rng() * len);
+  const point2 = Math.floor(rng() * len);
   const [start, end] = [Math.min(point1, point2), Math.max(point1, point2)];
 
   const child1Genes = [
@@ -63,12 +65,13 @@ export function twoPointCrossover(
 export function gaussianMutation(
   chromosome: Chromosome,
   mutationRate: number,
-  maxAdjustment: number
+  maxAdjustment: number,
+  rng: () => number = Math.random
 ): void {
   for (const gene of chromosome.genes) {
     // Mutar d0Offset
-    if (Math.random() < mutationRate) {
-      const delta = Math.floor(Math.random() * 7) - 3;
+    if (rng() < mutationRate) {
+      const delta = Math.floor(rng() * 7) - 3;
       const newOffset = gene.d0Offset + delta;
 
       gene.d0Offset = Math.max(
@@ -79,8 +82,8 @@ export function gaussianMutation(
 
     // Mutar cada gap independentemente (21, 22 ou 23)
     for (let i = 0; i < 3; i++) {
-      if (Math.random() < mutationRate) {
-        gene.roundGaps[i] = 21 + Math.floor(Math.random() * 3);
+      if (rng() < mutationRate) {
+        gene.roundGaps[i] = 21 + Math.floor(rng() * 3);
       }
     }
   }
@@ -91,15 +94,16 @@ export function gaussianMutation(
  */
 export function createRandomChromosome(
   lotIds: string[],
-  maxAdjustment: number
+  maxAdjustment: number,
+  rng: () => number = Math.random
 ): Chromosome {
   const genes = lotIds.map((lotId) => ({
     lotId,
-    d0Offset: Math.floor(Math.random() * (2 * maxAdjustment + 1)) - maxAdjustment,
+    d0Offset: Math.floor(rng() * (2 * maxAdjustment + 1)) - maxAdjustment,
     roundGaps: [
-      21 + Math.floor(Math.random() * 3),
-      21 + Math.floor(Math.random() * 3),
-      21 + Math.floor(Math.random() * 3),
+      21 + Math.floor(rng() * 3),
+      21 + Math.floor(rng() * 3),
+      21 + Math.floor(rng() * 3),
     ] as [number, number, number],
   }));
 

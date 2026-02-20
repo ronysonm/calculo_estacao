@@ -13,15 +13,50 @@ import { PREDEFINED_PROTOCOLS } from '@/domain/constants';
 import { ExportDialog } from '@/components/Export/ExportDialog';
 import { optimizerService } from '@/services/optimization/optimizer-service';
 import {
+  OptimizationErrorCode,
+  OptimizationServiceError,
+} from '@/services/optimization/optimizer-contract';
+import {
   isOptimizingSignal,
   optimizationScenariosSignal,
   maxD0AdjustmentSignal,
+  optimizationErrorSignal,
   setMaxD0Adjustment,
   setOptimizationScenarios,
+  setOptimizationError,
+  clearOptimizationError,
   clearOptimizationScenarios,
 } from '@/state/signals/optimization';
 import { OptimizationModal } from '@/components/Optimization/OptimizationModal';
 import { OptimizationScenario } from '@/domain/value-objects/OptimizationScenario';
+
+const OPTIMIZATION_TIME_LIMIT_MS = 30000;
+const OPTIMIZATION_HARD_TIMEOUT_MS = Math.max(
+  Math.floor(OPTIMIZATION_TIME_LIMIT_MS * 1.25),
+  OPTIMIZATION_TIME_LIMIT_MS + 5000
+);
+const OPTIMIZATION_HARD_TIMEOUT_SECONDS = Math.ceil(OPTIMIZATION_HARD_TIMEOUT_MS / 1000);
+
+function getOptimizationErrorMessage(
+  code: Exclude<OptimizationErrorCode, 'OK'>,
+  fallbackMessage: string
+): string {
+  switch (code) {
+    case 'OPTIMIZATION_TIMEOUT':
+      return 'A otimizacao excedeu o tempo limite. Tente reduzir o numero de lotes ou execute novamente.';
+    case 'OPTIMIZATION_IN_PROGRESS':
+      return 'Ja existe uma otimizacao em andamento. Aguarde a execucao atual terminar.';
+    case 'OPTIMIZATION_CANCELED':
+      return 'A otimizacao foi cancelada antes da conclusao.';
+    case 'OPTIMIZATION_VALIDATION_ERROR':
+      return 'Nao foi possivel validar os dados de entrada para a otimizacao.';
+    case 'OPTIMIZATION_WORKER_ERROR':
+      return 'Falha no motor de otimizacao em segundo plano. Tente novamente.';
+    case 'OPTIMIZATION_RUNTIME_ERROR':
+    default:
+      return fallbackMessage || 'Erro inesperado durante a otimizacao.';
+  }
+}
 
 function getNextDefaultD0(): string {
   const lots = lotsSignal.value;
@@ -38,6 +73,7 @@ export function LotForm() {
   const lots = lotsSignal.value;
   const isOptimizing = isOptimizingSignal.value;
   const scenarios = optimizationScenariosSignal.value;
+  const optimizationError = optimizationErrorSignal.value;
   const maxD0Adjustment = maxD0AdjustmentSignal.value;
 
   const [lotName, setLotName] = useState('');
@@ -46,22 +82,26 @@ export function LotForm() {
   const [showValidationModal, setShowValidationModal] = useState(false);
   
   // Estados para UI de otimizacao
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(OPTIMIZATION_HARD_TIMEOUT_SECONDS);
   const [optimizeMessage, setOptimizeMessage] = useState('Iniciando otimização...');
 
   // Efeito do timer
   useEffect(() => {
-    let interval: number;
+    let interval: number | undefined;
     if (isOptimizing) {
-      setTimeLeft(30);
+      setTimeLeft(OPTIMIZATION_HARD_TIMEOUT_SECONDS);
       interval = window.setInterval(() => {
         setTimeLeft((prev) => {
           const newState = prev > 0 ? prev - 1 : 0;
+          const progressRatio =
+            OPTIMIZATION_HARD_TIMEOUT_SECONDS > 0
+              ? newState / OPTIMIZATION_HARD_TIMEOUT_SECONDS
+              : 0;
           
           // Atualizar mensagem baseado no tempo restante
-          if (newState > 20) {
+          if (progressRatio > 0.66) {
             setOptimizeMessage('Inicializando algoritmo genético...');
-          } else if (newState > 10) {
+          } else if (progressRatio > 0.33) {
             setOptimizeMessage('Simulando milhares de combinações de datas...');
           } else if (newState > 0) {
             setOptimizeMessage('Refinando os 4 melhores cenários para você...');
@@ -73,7 +113,11 @@ export function LotForm() {
         });
       }, 1000);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   }, [isOptimizing]);
 
   const handleSubmit = (e: Event) => {
@@ -105,24 +149,42 @@ export function LotForm() {
    */
   const handleOptimize = async () => {
     if (lots.length < 2) {
-      alert('Adicione pelo menos 2 lotes para otimizar.');
+      setOptimizationError({
+        code: 'OPTIMIZATION_VALIDATION_ERROR',
+        message: 'Adicione pelo menos 2 lotes para otimizar.',
+      });
       return;
     }
 
     try {
       isOptimizingSignal.value = true;
-      clearOptimizationScenarios();
+      clearOptimizationError();
 
       const { scenarios, totalCombinations } = await optimizerService.optimizeSchedule(
         lots,
         maxD0Adjustment,
-        30000 // 30 segundos
+        OPTIMIZATION_TIME_LIMIT_MS
       );
 
       setOptimizationScenarios(scenarios, { totalCombinations });
+      clearOptimizationError();
     } catch (error) {
       console.error('Erro na otimizacao:', error);
-      alert('Erro ao otimizar. Tente novamente.');
+
+      const serviceError =
+        error instanceof OptimizationServiceError
+          ? error
+          : new OptimizationServiceError(
+              'OPTIMIZATION_RUNTIME_ERROR',
+              error instanceof Error ? error.message : 'Erro desconhecido durante a otimizacao.',
+              { cause: error }
+            );
+
+      setOptimizationError({
+        code: serviceError.code,
+        message: getOptimizationErrorMessage(serviceError.code, serviceError.message),
+        details: serviceError.details,
+      });
     } finally {
       isOptimizingSignal.value = false;
     }
@@ -227,6 +289,12 @@ export function LotForm() {
                 'Otimizar Calendario'
               )}
             </button>
+
+            {optimizationError && (
+              <p class="text-error" role="alert">
+                {optimizationError.message}
+              </p>
+            )}
           </div>
 
           <ExportDialog />

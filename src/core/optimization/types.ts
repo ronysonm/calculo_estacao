@@ -16,6 +16,8 @@ export interface Chromosome {
   genes: Gene[];
   fitness: number;
   objectives?: ScheduleObjectives;
+  rank?: number;
+  crowdingDistance?: number;
 }
 
 /**
@@ -53,6 +55,21 @@ export interface GeneticParams {
   timeLimitMs: number;
   maxD0Adjustment: number;
   attemptsPerProfile: number;
+  islandCount: number;
+  migrationIntervalGenerations: number;
+  migrationTopK: number;
+  memeticIntervalGenerations: number;
+  memeticEliteCount: number;
+  memeticLotSampleSize: number;
+  memeticMaxImprovements: number;
+  memeticMaxNeighborEvaluations: number;
+  enableCpSatForSmallInstances?: boolean;
+  cpSatLotThreshold: number;
+  cpSatMaxEvaluationsPerProfile: number;
+  cpSatTopCandidatesPerProfile: number;
+  minAttemptBudgetMs?: number;
+  deadlineSafetyMs?: number;
+  rng?: () => number;
 }
 
 /**
@@ -67,4 +84,18 @@ export const DEFAULT_GA_PARAMS: GeneticParams = {
   timeLimitMs: 30000,
   maxD0Adjustment: 15,
   attemptsPerProfile: 3,
+  islandCount: 4,
+  migrationIntervalGenerations: 10,
+  migrationTopK: 2,
+  memeticIntervalGenerations: 2,
+  memeticEliteCount: 3,
+  memeticLotSampleSize: 4,
+  memeticMaxImprovements: 1,
+  memeticMaxNeighborEvaluations: 64,
+  enableCpSatForSmallInstances: true,
+  cpSatLotThreshold: 3,
+  cpSatMaxEvaluationsPerProfile: 120000,
+  cpSatTopCandidatesPerProfile: 3,
+  minAttemptBudgetMs: 200,
+  deadlineSafetyMs: 20,
 };

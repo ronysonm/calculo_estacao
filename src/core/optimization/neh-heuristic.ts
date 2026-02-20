@@ -1,6 +1,6 @@
 import { Lot } from '@/domain/value-objects/Lot';
 import { Chromosome, Gene, ScenarioWeights } from './types';
-import { evaluateChromosome } from './fitness-calculator';
+import { createEvaluationContext, evaluateChromosome, EvaluationContext } from './fitness-calculator';
 
 const VALID_GAPS = [21, 22, 23] as const;
 
@@ -13,8 +13,11 @@ const VALID_GAPS = [21, 22, 23] as const;
  */
 export function nehInitialization(
   lots: Lot[],
-  weights?: ScenarioWeights
+  weights?: ScenarioWeights,
+  context?: EvaluationContext
 ): Chromosome {
+  const evaluationContext = context ?? createEvaluationContext(lots);
+
   // 1. Ordenar lotes por duracao total do protocolo (decrescente)
   const sortedLots = [...lots].sort((a, b) => {
     const durationA = getTotalProtocolDuration(a);
@@ -22,18 +25,32 @@ export function nehInitialization(
     return durationB - durationA;
   });
 
-  // 2. Criar cromossomo com offsets zero e gaps originais
-  const genes: Gene[] = sortedLots.map((lot) => ({
-    lotId: lot.id,
-    d0Offset: 0,
-    roundGaps: [...lot.roundGaps].slice(0, 3) as [number, number, number],
-  }));
+  // 2. Criar genes em ordem canonica dos lotes
+  const genesById = new Map<string, Gene>();
+  for (const lot of lots) {
+    genesById.set(lot.id, {
+      lotId: lot.id,
+      d0Offset: 0,
+      roundGaps: [...lot.roundGaps].slice(0, 3) as [number, number, number],
+    });
+  }
+
+  const genes: Gene[] = lots
+    .map((lot) => genesById.get(lot.id))
+    .filter((gene): gene is Gene => gene !== undefined);
+
+  const testChromosome: Chromosome = { genes, fitness: 0 };
 
   // 3. Tentar ajustes de D0 e combinacoes de gaps para cada gene
-  for (const gene of genes) {
+  for (const lot of sortedLots) {
+    const gene = genesById.get(lot.id);
+    if (!gene) {
+      continue;
+    }
+
     let bestOffset = 0;
     let bestGaps = [...gene.roundGaps] as [number, number, number];
-    let bestFitness = 0;
+    let bestFitness = Number.NEGATIVE_INFINITY;
 
     for (let offset = -3; offset <= 3; offset++) {
       for (const g0 of VALID_GAPS) {
@@ -42,8 +59,9 @@ export function nehInitialization(
             gene.d0Offset = offset;
             gene.roundGaps = [g0, g1, g2];
 
-            const testChromosome = { genes: [...genes], fitness: 0 };
-            const { fitness } = evaluateChromosome(testChromosome, lots, weights);
+            const { fitness } = evaluateChromosome(testChromosome, lots, weights, evaluationContext, {
+              changedLotIds: [lot.id],
+            });
 
             if (fitness > bestFitness) {
               bestFitness = fitness;

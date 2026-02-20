@@ -18,6 +18,7 @@ import {
   calculateObjectives,
   scalarizeObjectives,
   calculateFitness,
+  createEvaluationContext,
   evaluateChromosome,
 } from '../../../src/core/optimization/fitness-calculator';
 import { Chromosome } from '../../../src/core/optimization/types';
@@ -424,6 +425,78 @@ describe('evaluateChromosome - Genetic Algorithm Integration', () => {
 
     // Changed gaps should reduce fitness due to gapChangePenalty
     expect(baselineResult.fitness).toBeGreaterThan(changedResult.fitness);
+  });
+
+  it('should keep incremental delta evaluation consistent with full recomputation', () => {
+    const protocol = Protocol.create('p1', 'D0-D7-D9', [0, 7, 9], 'D0-D7-D9');
+    const lots = [
+      Lot.create('lot1', 'Lot 1', DateOnly.create(2026, 1, 1), protocol, [22, 22, 22]),
+      Lot.create('lot2', 'Lot 2', DateOnly.create(2026, 1, 3), protocol, [22, 22, 22]),
+    ];
+
+    const chromosome: Chromosome = {
+      genes: [
+        { lotId: 'lot1', d0Offset: 0, roundGaps: [22, 22, 22] },
+        { lotId: 'lot2', d0Offset: 0, roundGaps: [22, 22, 22] },
+      ],
+      fitness: 0,
+    };
+
+    const sharedContext = createEvaluationContext(lots);
+    evaluateChromosome(chromosome, lots, DEFAULT_WEIGHTS, sharedContext);
+
+    chromosome.genes[0]!.d0Offset = 3;
+    chromosome.genes[0]!.roundGaps = [21, 23, 21];
+
+    const incrementalResult = evaluateChromosome(
+      chromosome,
+      lots,
+      DEFAULT_WEIGHTS,
+      sharedContext,
+      { changedLotIds: ['lot1'] }
+    );
+
+    const freshResult = evaluateChromosome(
+      chromosome,
+      lots,
+      DEFAULT_WEIGHTS,
+      createEvaluationContext(lots)
+    );
+
+    expect(incrementalResult.objectives).toEqual(freshResult.objectives);
+    expect(incrementalResult.fitness).toBe(freshResult.fitness);
+  });
+
+  it('should detect changed genes automatically when no delta hint is provided', () => {
+    const protocol = Protocol.create('p1', 'D0-D7-D9', [0, 7, 9], 'D0-D7-D9');
+    const lots = [
+      Lot.create('lot1', 'Lot 1', DateOnly.create(2026, 1, 1), protocol, [22, 22, 22]),
+      Lot.create('lot2', 'Lot 2', DateOnly.create(2026, 1, 3), protocol, [22, 22, 22]),
+    ];
+
+    const chromosome: Chromosome = {
+      genes: [
+        { lotId: 'lot1', d0Offset: 0, roundGaps: [22, 22, 22] },
+        { lotId: 'lot2', d0Offset: 0, roundGaps: [22, 22, 22] },
+      ],
+      fitness: 0,
+    };
+
+    const sharedContext = createEvaluationContext(lots);
+    evaluateChromosome(chromosome, lots, DEFAULT_WEIGHTS, sharedContext);
+
+    chromosome.genes[1]!.d0Offset = -2;
+
+    const incrementalResult = evaluateChromosome(chromosome, lots, DEFAULT_WEIGHTS, sharedContext);
+    const freshResult = evaluateChromosome(
+      chromosome,
+      lots,
+      DEFAULT_WEIGHTS,
+      createEvaluationContext(lots)
+    );
+
+    expect(incrementalResult.objectives).toEqual(freshResult.objectives);
+    expect(incrementalResult.fitness).toBe(freshResult.fitness);
   });
 });
 

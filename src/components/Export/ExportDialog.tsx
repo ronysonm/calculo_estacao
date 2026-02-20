@@ -7,6 +7,7 @@
 import { useState } from 'preact/hooks';
 import { lotsSignal } from '@/state/signals/lots';
 import { handlingDatesSignal, cycleStartSignal } from '@/state/signals/conflicts';
+import { roundSuccessRatesSignal } from '@/state/signals/success-rates';
 import { generatePDF } from '@/services/export/pdf-generator';
 import { generateExcel } from '@/services/export/excel-generator';
 
@@ -16,12 +17,13 @@ export function ExportDialog() {
   const lots = lotsSignal.value;
   const handlingDates = handlingDatesSignal.value;
   const cycleStart = cycleStartSignal.value;
+  const successRates = roundSuccessRatesSignal.value;
 
   const handleExportPDF = async () => {
     setIsExporting(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 100));
-      generatePDF(lots, handlingDates, cycleStart);
+      generatePDF(lots, handlingDates, cycleStart, successRates);
     } catch (error) {
       console.error('PDF export error:', error);
       alert('Erro ao gerar PDF. Verifique o console para detalhes.');
@@ -34,7 +36,7 @@ export function ExportDialog() {
     setIsExporting(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 100));
-      await generateExcel(lots, handlingDates);
+      await generateExcel(lots, handlingDates, successRates);
     } catch (error) {
       console.error('Excel export error:', error);
       alert('Erro ao gerar Excel. Verifique o console para detalhes.');

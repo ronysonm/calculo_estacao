@@ -9,7 +9,7 @@ import { signal } from '@preact/signals';
 import { Lot } from '@/domain/value-objects/Lot';
 import { DateOnly } from '@/domain/value-objects/DateOnly';
 import { Protocol } from '@/domain/value-objects/Protocol';
-import { DEFAULT_LOT_NAMES, DEFAULT_PROTOCOL, DEFAULT_ROUND_GAPS } from '@/domain/constants';
+import { DEFAULT_LOT_NAMES, DEFAULT_PROTOCOL, DEFAULT_ROUND_GAPS, DEFAULT_ANIMAL_COUNT } from '@/domain/constants';
 import { addDaysToDateOnly } from '@/core/date-engine/utils';
 
 /**
@@ -48,11 +48,20 @@ export function initializeDefaultLots(): void {
 /**
  * Add a new lot
  */
-export function addLot(name: string, d0: DateOnly, protocol: Protocol): void {
+export function addLot(name: string, d0: DateOnly, protocol: Protocol, animalCount: number = DEFAULT_ANIMAL_COUNT): void {
   const newId = `lot-${Date.now()}`;
-  const newLot = Lot.create(newId, name, d0, protocol, DEFAULT_ROUND_GAPS);
+  const newLot = Lot.create(newId, name, d0, protocol, DEFAULT_ROUND_GAPS, animalCount);
 
   lotsSignal.value = [...lotsSignal.value, newLot];
+}
+
+/**
+ * Change lot animal count
+ */
+export function changeLotAnimalCount(lotId: string, newCount: number): void {
+  lotsSignal.value = lotsSignal.value.map((lot) =>
+    lot.id === lotId ? lot.withAnimalCount(newCount) : lot
+  );
 }
 
 /**

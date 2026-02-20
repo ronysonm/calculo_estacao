@@ -6,38 +6,103 @@
  * Between rounds, gap controls with +/- buttons allow adjusting intervals.
  */
 
-import { useState } from 'preact/hooks';
-import { lotsSignal, changeLotRoundGap, changeLotD0, renameLot, changeLotProtocol, removeLot } from '@/state/signals/lots';
+import { useState, useRef, useEffect } from 'preact/hooks';
+import { lotsSignal, changeLotRoundGap, changeLotD0, renameLot, changeLotProtocol, removeLot, changeLotAnimalCount } from '@/state/signals/lots';
+import { roundSuccessRatesSignal, setRoundSuccessRate } from '@/state/signals/success-rates';
 import { handlingDatesSignal, cycleStartSignal } from '@/state/signals/conflicts';
 import { getDayOfWeekName, formatDateBR, addDaysToDateOnly, daysBetween } from '@/core/date-engine/utils';
 import { getConflictTypeForCell } from '@/core/conflict/detector';
-import { DEFAULT_ROUNDS, ROUND_NAMES, PREDEFINED_PROTOCOLS } from '@/domain/constants';
+import { DEFAULT_ROUNDS, ROUND_NAMES, PREDEFINED_PROTOCOLS, GESTACAO_DIAS } from '@/domain/constants';
 import { DateOnly } from '@/domain/value-objects/DateOnly';
 import { Lot } from '@/domain/value-objects/Lot';
 import { HandlingDate } from '@/domain/value-objects/HandlingDate';
 import '@/styles/table.css';
+
+function SuccessRateDisplay({ roundIdx, rate, totalAnimals }: { roundIdx: number; rate: number; totalAnimals: number }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const handleSave = () => {
+    const val = parseInt(editValue) || 0;
+    setRoundSuccessRate(roundIdx, val);
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSave();
+    } else if (e.key === 'Escape') {
+      setIsEditing(false);
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <div class="success-rate-control">
+        <label class="success-rate-label">Taxa:</label>
+        <input
+          ref={inputRef}
+          type="number"
+          class="success-rate-input"
+          min="0"
+          max="100"
+          value={editValue}
+          onInput={(e) => setEditValue((e.target as HTMLInputElement).value)}
+          onBlur={handleSave}
+          onKeyDown={handleKeyDown}
+        />
+        <span class="success-rate-percent">%</span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      class="success-rate-display"
+      onDblClick={() => {
+        setEditValue(String(rate));
+        setIsEditing(true);
+      }}
+      title="Duplo clique para editar"
+    >
+      <span class="success-rate-text">Taxa {rate}% | {totalAnimals} Animais</span>
+    </div>
+  );
+}
 
 function LotBlock({
   lot,
   handlingDates,
   allHandlingDates,
   cycleStart,
+  successRates,
 }: {
   lot: Lot;
   handlingDates: HandlingDate[];
   allHandlingDates: HandlingDate[];
   cycleStart: DateOnly;
+  successRates: readonly number[];
 }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isConfirmRemoveOpen, setIsConfirmRemoveOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editD0, setEditD0] = useState('');
   const [editProtocolId, setEditProtocolId] = useState('');
+  const [editAnimalCount, setEditAnimalCount] = useState(100);
 
   const openEditModal = () => {
     setEditName(lot.name);
     setEditD0(lot.d0.toISOString());
     setEditProtocolId(lot.protocol.id);
+    setEditAnimalCount(lot.animalCount);
     setIsEditModalOpen(true);
   };
 
@@ -55,6 +120,9 @@ function LotBlock({
       if (newProtocol) {
         changeLotProtocol(lot.id, newProtocol);
       }
+    }
+    if (editAnimalCount !== lot.animalCount) {
+      changeLotAnimalCount(lot.id, editAnimalCount);
     }
     setIsEditModalOpen(false);
   };
@@ -86,6 +154,8 @@ function LotBlock({
     const startOffset = lot.getRoundStartOffset(roundIdx);
     return protocolDays.map((pd) => lotOffset + startOffset + pd);
   };
+
+  const animalsPerRound = lot.getAnimalsPerRound(successRates, DEFAULT_ROUNDS);
 
   return (
     <div class="lot-block">
@@ -130,7 +200,7 @@ function LotBlock({
         <tbody>
           {/* Row 1: Dia (weekday) */}
           <tr class="dia-row">
-            <td class="lot-name-cell" rowSpan={3}>
+            <td class="lot-name-cell" rowSpan={4}>
               <span class="lot-name-text" onDblClick={openEditModal} title="Duplo clique para editar">{lot.name}</span>
               <div class="d0-controls">
                 <button
@@ -173,7 +243,7 @@ function LotBlock({
                     );
                   })}
                   {roundIdx < DEFAULT_ROUNDS - 1 && (
-                    <td class="gap-cell gap-buttons-cell" rowSpan={3}>
+                    <td class="gap-cell gap-buttons-cell" rowSpan={4}>
                       <div class="gap-controls">
                         <button
                           type="button"
@@ -230,7 +300,7 @@ function LotBlock({
 
           {/* Row 3: Dia do ciclo (cycle day) */}
           <tr class="ciclo-row">
-            <td class="row-label-cell row-label-bottom">Dia do ciclo</td>
+            <td class="row-label-cell">Dia do ciclo</td>
             {Array.from({ length: DEFAULT_ROUNDS }).map((_, roundIdx) => {
               const cycleDays = getCycleDays(roundIdx);
               return (
@@ -243,6 +313,35 @@ function LotBlock({
                       {cd}
                     </td>
                   ))}
+                </>
+              );
+            })}
+          </tr>
+
+          {/* Row 4: Qtd. Animais + Prov. Parição (merged) */}
+          <tr class="animais-paricao-row">
+            <td class="row-label-cell row-label-bottom"></td>
+            {Array.from({ length: DEFAULT_ROUNDS }).map((_, roundIdx) => {
+              const count = animalsPerRound[roundIdx] ?? 0;
+              const lastPd = protocolDays[protocolDays.length - 1] ?? 0;
+              const startOffset = lot.getRoundStartOffset(roundIdx);
+              const paricaoDate = addDaysToDateOnly(lot.d0, startOffset + lastPd + GESTACAO_DIAS);
+              return (
+                <>
+                  {protocolDays.map((_pd, pdIdx) => {
+                    const isFirst = pdIdx === 0;
+                    const isMiddle = pdIdx > 0 && pdIdx < protocolDays.length - 1;
+                    const isLast = pdIdx === protocolDays.length - 1;
+                    return (
+                      <td
+                        key={`ap-${roundIdx}-${pdIdx}`}
+                        class={`data-cell animais-paricao-cell${isFirst ? ' animais-count-cell' : ''}${isLast ? ' paricao-date-cell' : ''}${isMiddle ? ' paricao-label-cell' : ''}`}
+                        title={isLast ? `Min ${formatDateBR(addDaysToDateOnly(paricaoDate, -15))} - Max ${formatDateBR(addDaysToDateOnly(paricaoDate, 15))}` : undefined}
+                      >
+                        {isFirst ? `${count} Anim.` : isMiddle ? 'Prov. Parição' : isLast ? formatDateBR(paricaoDate) : ''}
+                      </td>
+                    );
+                  })}
                 </>
               );
             })}
@@ -307,6 +406,19 @@ function LotBlock({
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
+            </div>
+            <div style={{ marginBottom: 'var(--spacing-md)' }}>
+              <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontWeight: 600, fontSize: '0.875rem' }}>
+                Quantidade de animais
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="10000"
+                style={{ width: '100%', padding: 'var(--spacing-xs) var(--spacing-sm)', fontSize: '0.875rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}
+                value={editAnimalCount}
+                onInput={(e) => setEditAnimalCount(Math.max(1, parseInt((e.target as HTMLInputElement).value) || 1))}
+              />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <button
@@ -397,6 +509,7 @@ function LotBlock({
 export function CalculationTable() {
   const lots = lotsSignal.value;
   const allHandlingDates = handlingDatesSignal.value;
+  const successRates = roundSuccessRatesSignal.value;
 
   if (lots.length === 0) {
     return (
@@ -413,6 +526,15 @@ export function CalculationTable() {
 
   const cycleStart = cycleStartSignal.value ?? lots[0]!.d0;
 
+  // Compute total animals per round across all lots
+  const totalAnimalsPerRound = Array.from({ length: DEFAULT_ROUNDS }, () => 0);
+  for (const lot of lots) {
+    const perRound = lot.getAnimalsPerRound(successRates);
+    for (let i = 0; i < DEFAULT_ROUNDS; i++) {
+      totalAnimalsPerRound[i] = (totalAnimalsPerRound[i] ?? 0) + (perRound[i] ?? 0);
+    }
+  }
+
   return (
     <div class="calculation-table-container">
       {/* Round headers at the top */}
@@ -421,7 +543,8 @@ export function CalculationTable() {
         {Array.from({ length: DEFAULT_ROUNDS }).map((_, roundIdx) => (
           <>
             <div key={`rnd-${roundIdx}`} class="round-header-label">
-              {ROUND_NAMES[roundIdx]}
+              <span>{ROUND_NAMES[roundIdx]}</span>
+              <SuccessRateDisplay roundIdx={roundIdx} rate={successRates[roundIdx] ?? 0} totalAnimals={totalAnimalsPerRound[roundIdx]!} />
             </div>
             {roundIdx < DEFAULT_ROUNDS - 1 && (
               <div class="round-header-gap-spacer"></div>
@@ -443,6 +566,7 @@ export function CalculationTable() {
               handlingDates={lotHandlingDates}
               allHandlingDates={allHandlingDates}
               cycleStart={cycleStart}
+              successRates={successRates}
             />
           );
         })}

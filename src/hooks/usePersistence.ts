@@ -7,6 +7,7 @@
 
 import { useEffect, useRef } from 'preact/hooks';
 import { lotsSignal, setLots } from '@/state/signals/lots';
+import { roundSuccessRatesSignal, setAllRoundSuccessRates } from '@/state/signals/success-rates';
 import { storage } from '@/services/persistence/storage';
 import { debounce } from '@/utils/performance';
 
@@ -31,6 +32,9 @@ export function usePersistence() {
     const data = storage.load();
     if (data) {
       setLots(data.lots);
+      if (data.roundSuccessRates) {
+        setAllRoundSuccessRates(data.roundSuccessRates);
+      }
       console.log(`Loaded ${data.lots.length} lots from localStorage`);
     }
 
@@ -44,7 +48,8 @@ export function usePersistence() {
 
     const debouncedSave = debounce(() => {
       const lots = lotsSignal.value;
-      storage.save(lots, []);
+      const rates = roundSuccessRatesSignal.value;
+      storage.save(lots, [], rates);
 
       // Check quota
       const quota = storage.getQuotaInfo();
@@ -78,7 +83,7 @@ export function usePersistence() {
     }, 1000);
 
     debouncedSave();
-  }, [lotsSignal.value]);
+  }, [lotsSignal.value, roundSuccessRatesSignal.value]);
 
   return {
     clear: () => storage.clear(),

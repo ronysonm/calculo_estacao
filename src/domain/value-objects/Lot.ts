@@ -14,7 +14,8 @@ export class Lot {
     public readonly name: string,
     public readonly d0: DateOnly,
     public readonly protocol: Protocol,
-    public readonly roundGaps: readonly number[] = [22, 22, 22]
+    public readonly roundGaps: readonly number[] = [22, 22, 22],
+    public readonly animalCount: number = 100
   ) {
     // Validation
     if (name.trim().length === 0) {
@@ -24,6 +25,9 @@ export class Lot {
       if (gap < 1) {
         throw new Error('Round gap must be at least 1 day');
       }
+    }
+    if (animalCount < 1) {
+      throw new Error('Animal count must be at least 1');
     }
   }
 
@@ -35,30 +39,31 @@ export class Lot {
     name: string,
     d0: DateOnly,
     protocol: Protocol,
-    roundGaps: readonly number[] = [22, 22, 22]
+    roundGaps: readonly number[] = [22, 22, 22],
+    animalCount: number = 100
   ): Lot {
-    return new Lot(id, name, d0, protocol, roundGaps);
+    return new Lot(id, name, d0, protocol, roundGaps, animalCount);
   }
 
   /**
    * Create a new lot with updated D0 (immutable update)
    */
   withD0(newD0: DateOnly): Lot {
-    return new Lot(this.id, this.name, newD0, this.protocol, this.roundGaps);
+    return new Lot(this.id, this.name, newD0, this.protocol, this.roundGaps, this.animalCount);
   }
 
   /**
    * Create a new lot with updated protocol (immutable update)
    */
   withProtocol(newProtocol: Protocol): Lot {
-    return new Lot(this.id, this.name, this.d0, newProtocol, this.roundGaps);
+    return new Lot(this.id, this.name, this.d0, newProtocol, this.roundGaps, this.animalCount);
   }
 
   /**
    * Create a new lot with updated name (immutable update)
    */
   withName(newName: string): Lot {
-    return new Lot(this.id, newName, this.d0, this.protocol, this.roundGaps);
+    return new Lot(this.id, newName, this.d0, this.protocol, this.roundGaps, this.animalCount);
   }
 
   /**
@@ -69,7 +74,34 @@ export class Lot {
   withRoundGap(index: number, newGap: number): Lot {
     const newGaps = [...this.roundGaps];
     newGaps[index] = newGap;
-    return new Lot(this.id, this.name, this.d0, this.protocol, newGaps);
+    return new Lot(this.id, this.name, this.d0, this.protocol, newGaps, this.animalCount);
+  }
+
+  /**
+   * Create a new lot with updated animal count (immutable update)
+   */
+  withAnimalCount(newCount: number): Lot {
+    return new Lot(this.id, this.name, this.d0, this.protocol, this.roundGaps, newCount);
+  }
+
+  /**
+   * Calculate the number of animals in each round based on success rates.
+   *
+   * Each round's remaining animals = previous round animals - floor(previous * rate/100).
+   *
+   * @param successRates - Success rate (%) for each round [R1, R2, R3, R4]
+   * @param rounds - Number of rounds (default 4)
+   * @returns Array with animal count per round
+   */
+  getAnimalsPerRound(successRates: readonly number[], rounds: number = 4): number[] {
+    const result: number[] = [this.animalCount];
+    for (let i = 1; i < rounds; i++) {
+      const prev = result[i - 1]!;
+      const rate = successRates[i - 1] ?? 0;
+      const successful = Math.floor(prev * rate / 100);
+      result.push(prev - successful);
+    }
+    return result;
   }
 
   /**
@@ -148,7 +180,8 @@ export class Lot {
       this.d0.equals(other.d0) &&
       this.protocol.equals(other.protocol) &&
       this.roundGaps.length === other.roundGaps.length &&
-      this.roundGaps.every((g, i) => g === other.roundGaps[i])
+      this.roundGaps.every((g, i) => g === other.roundGaps[i]) &&
+      this.animalCount === other.animalCount
     );
   }
 
@@ -166,6 +199,7 @@ export class Lot {
       type: string;
     };
     roundGaps: readonly number[];
+    animalCount: number;
   } {
     return {
       id: this.id,
@@ -173,6 +207,7 @@ export class Lot {
       d0: this.d0.toJSON(),
       protocol: this.protocol.toJSON(),
       roundGaps: this.roundGaps,
+      animalCount: this.animalCount,
     };
   }
 
@@ -191,6 +226,7 @@ export class Lot {
     };
     roundGaps?: readonly number[];
     roundInterval?: number;
+    animalCount?: number;
   }): Lot {
     // Handle migration from old roundInterval to new roundGaps
     let gaps: readonly number[];
@@ -207,7 +243,8 @@ export class Lot {
       json.name,
       DateOnly.fromJSON(json.d0),
       Protocol.fromJSON(json.protocol),
-      gaps
+      gaps,
+      json.animalCount ?? 100
     );
   }
 }

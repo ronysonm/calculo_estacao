@@ -14,9 +14,9 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Lot } from '@/domain/value-objects/Lot';
 import { HandlingDate } from '@/domain/value-objects/HandlingDate';
-import { getDayOfWeekName, formatDateBR, daysBetween } from '@/core/date-engine/utils';
+import { getDayOfWeekName, formatDateBR, daysBetween, addDaysToDateOnly } from '@/core/date-engine/utils';
 import { getConflictTypeForCell } from '@/core/conflict/detector';
-import { DEFAULT_ROUNDS, ROUND_NAMES } from '@/domain/constants';
+import { DEFAULT_ROUNDS, ROUND_NAMES, GESTACAO_DIAS, DEFAULT_ROUND_SUCCESS_RATES } from '@/domain/constants';
 import { DateOnly } from '@/domain/value-objects/DateOnly';
 
 // --- Color constants (matching table.css) ---
@@ -82,7 +82,8 @@ function getLastTableY(doc: jsPDF, fallback: number): number {
 export function generatePDF(
   lots: Lot[],
   handlingDates: HandlingDate[],
-  cycleStart?: DateOnly | null
+  cycleStart?: DateOnly | null,
+  roundSuccessRates?: readonly number[]
 ): void {
   const doc = new jsPDF({
     orientation: 'landscape',
@@ -98,6 +99,7 @@ export function generatePDF(
   }
 
   const effectiveCycleStart = cycleStart ?? lots[0]!.d0;
+  const effectiveRates = roundSuccessRates ?? [...DEFAULT_ROUND_SUCCESS_RATES];
 
   // --- Title ---
   doc.setFontSize(14);
@@ -134,7 +136,7 @@ export function generatePDF(
 
     // Check if we need a new page (if not enough space for 5 rows ~30mm)
     const pageHeight = doc.internal.pageSize.getHeight();
-    if (startY > pageHeight - 35) {
+    if (startY > pageHeight - 40) {
       doc.addPage();
       startY = 15;
     }
@@ -198,7 +200,7 @@ export function generatePDF(
     const diaRow: any[] = [
       {
         content: lot.name,
-        rowSpan: 3,
+        rowSpan: 5,
         styles: {
           fontStyle: 'bold',
           fillColor: LOT_NAME_BG,
@@ -238,7 +240,7 @@ export function generatePDF(
       if (ri < DEFAULT_ROUNDS - 1) {
         diaRow.push({
           content: `${lot.roundGaps[ri] ?? 22}\ndias`,
-          rowSpan: 3,
+          rowSpan: 5,
           styles: { ...GAP_STYLE },
         });
       }
@@ -304,6 +306,74 @@ export function generatePDF(
       // Gap columns handled by rowSpan from diaRow
     }
 
+    // Row 4: Prov. Parição
+    const PARICAO_TEXT_COLOR: [number, number, number] = [90, 122, 58];
+    const paricaoRow: any[] = [
+      {
+        content: 'Prov. Parição',
+        styles: {
+          fillColor: LABEL_BG,
+          fontSize: 7,
+          halign: 'center',
+          fontStyle: 'bold',
+          textColor: PARICAO_TEXT_COLOR,
+        },
+      },
+    ];
+    for (let ri = 0; ri < DEFAULT_ROUNDS; ri++) {
+      const lastPd = protocolDays[protocolDays.length - 1] ?? 0;
+      const startOffset = lot.getRoundStartOffset(ri);
+      const paricaoDate = addDaysToDateOnly(lot.d0, startOffset + lastPd + GESTACAO_DIAS);
+
+      for (let pdIdx = 0; pdIdx < pdCount; pdIdx++) {
+        const isLast = pdIdx === pdCount - 1;
+        paricaoRow.push({
+          content: isLast ? formatDateBR(paricaoDate) : '',
+          styles: {
+            halign: 'center',
+            fontSize: 8,
+            fontStyle: isLast ? 'bold' : 'normal',
+            textColor: isLast ? PARICAO_TEXT_COLOR : [200, 200, 200] as [number, number, number],
+            fillColor: isLast ? [240, 247, 237] as [number, number, number] : WHITE,
+          },
+        });
+      }
+      // Gap columns handled by rowSpan from diaRow
+    }
+
+    // Row 5: Qtd. Animais
+    const ANIMAIS_TEXT_COLOR: [number, number, number] = [37, 99, 235];
+    const animalsPerRound = lot.getAnimalsPerRound(effectiveRates, DEFAULT_ROUNDS);
+    const animaisRow: any[] = [
+      {
+        content: 'Qtd. Animais',
+        styles: {
+          fillColor: LABEL_BG,
+          fontSize: 7,
+          halign: 'center',
+          fontStyle: 'bold',
+          textColor: ANIMAIS_TEXT_COLOR,
+        },
+      },
+    ];
+    for (let ri = 0; ri < DEFAULT_ROUNDS; ri++) {
+      const count = animalsPerRound[ri] ?? 0;
+      for (let pdIdx = 0; pdIdx < pdCount; pdIdx++) {
+        const isFirst = pdIdx === 0;
+        animaisRow.push({
+          content: isFirst ? String(count) : '',
+          styles: {
+            halign: 'center',
+            fontSize: 8,
+            fontStyle: isFirst ? 'bold' : 'normal',
+            textColor: isFirst ? ANIMAIS_TEXT_COLOR : [200, 200, 200] as [number, number, number],
+            fillColor: isFirst ? [237, 243, 255] as [number, number, number] : WHITE,
+          },
+        });
+      }
+      // Gap columns handled by rowSpan from diaRow
+    }
+
     // === Column widths ===
     const columnStyles: Record<number, any> = {
       0: { cellWidth: 22 }, // Lot name
@@ -324,7 +394,7 @@ export function generatePDF(
     // === Render the lot table ===
     autoTable(doc, {
       head: [roundHeaderRow, protocolHeaderRow],
-      body: [diaRow, dataRow, cicloRow],
+      body: [diaRow, dataRow, cicloRow, paricaoRow, animaisRow],
       startY,
       theme: 'grid',
       styles: {

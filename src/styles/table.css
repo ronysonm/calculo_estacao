@@ -208,7 +208,30 @@
 .ciclo-cell {
   font-size: 0.75rem;
   color: var(--color-text-secondary);
+}
+
+/* ============ Animais + Parição Merged Row ============ */
+.animais-paricao-cell {
+  font-size: 0.75rem;
   border-bottom: 0.5px solid var(--color-border);
+}
+
+.animais-paricao-cell.animais-count-cell {
+  font-weight: 700;
+  color: #2563eb;
+  background-color: rgba(37, 99, 235, 0.06);
+}
+
+.animais-paricao-cell.paricao-label-cell {
+  font-size: 0.6875rem;
+  color: #5a7a3a;
+  font-weight: 500;
+}
+
+.animais-paricao-cell.paricao-date-cell {
+  font-weight: 600;
+  color: #5a7a3a;
+  background-color: rgba(90, 170, 60, 0.06);
 }
 
 /* ============ Gap Controls ============ */
@@ -280,6 +303,66 @@
   color: #cc0000;
 }
 
+/* ============ Success Rate Display (in round header) ============ */
+.success-rate-display {
+  cursor: pointer;
+  margin-top: 2px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  transition: background-color 0.15s;
+}
+
+.success-rate-display:hover {
+  background-color: rgba(0, 176, 240, 0.1);
+}
+
+.success-rate-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* ============ Success Rate Edit Control ============ */
+.success-rate-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.success-rate-label {
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.success-rate-input {
+  width: 42px;
+  padding: 1px 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid #00B0F0;
+  border-radius: 3px;
+  background: white;
+  box-shadow: 0 0 0 1px #00B0F0;
+}
+
+.success-rate-input:focus {
+  outline: none;
+  border-color: #00B0F0;
+  box-shadow: 0 0 0 2px #00B0F0;
+}
+
+.success-rate-percent {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+/* (Animais row merged into animais-paricao row above) */
+
 /* ============ Empty State ============ */
 .table-empty {
   padding: var(--spacing-xl);
@@ -309,6 +392,11 @@
 
   .gap-value {
     font-size: 0.75rem;
+  }
+
+  .success-rate-input {
+    border: none;
+    background: transparent;
   }
 
   .calculation-table-container {

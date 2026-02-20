@@ -58,3 +58,12 @@ export const ROUND_NAMES = ['Rodada 1', 'Rodada 2', 'Rodada 3', 'Rodada 4'] as c
  * Day names in Portuguese (short form)
  */
 export const DAY_NAMES_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] as const;
+
+/** Duração média da gestação bovina em dias (usado para cálculo da parição) */
+export const GESTACAO_DIAS = 290;
+
+/** Quantidade padrao de animais por lote */
+export const DEFAULT_ANIMAL_COUNT = 100;
+
+/** Taxas de sucesso padrao por rodada (%) - [R1, R2, R3, R4] */
+export const DEFAULT_ROUND_SUCCESS_RATES: readonly number[] = [50, 20, 20, 10] as const;

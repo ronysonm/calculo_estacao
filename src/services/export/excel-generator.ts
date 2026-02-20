@@ -15,8 +15,8 @@ import ExcelJS from 'exceljs';
 import { Lot } from '@/domain/value-objects/Lot';
 import { HandlingDate } from '@/domain/value-objects/HandlingDate';
 import { getConflictTypeForCell } from '@/core/conflict/detector';
-import { DEFAULT_ROUNDS, ROUND_NAMES } from '@/domain/constants';
-import { getDayOfWeekName, formatDateBR } from '@/core/date-engine/utils';
+import { DEFAULT_ROUNDS, ROUND_NAMES, GESTACAO_DIAS, DEFAULT_ROUND_SUCCESS_RATES } from '@/domain/constants';
+import { getDayOfWeekName, formatDateBR, addDaysToDateOnly } from '@/core/date-engine/utils';
 
 // --- Style constants ---
 const THIN_BORDER: Partial<ExcelJS.Borders> = {
@@ -76,6 +76,13 @@ const FONT_CONFLICT_SUNDAY: Partial<ExcelJS.Font> = { size: 10, color: { argb: '
 const FONT_CONFLICT_OVERLAP: Partial<ExcelJS.Font> = { size: 10, color: { argb: 'FFCC6600' } };
 const FONT_CONFLICT_MULTIPLE: Partial<ExcelJS.Font> = { size: 10, color: { argb: 'FFCC0000' } };
 
+const FILL_ANIMAIS: ExcelJS.Fill = {
+  type: 'pattern',
+  pattern: 'solid',
+  fgColor: { argb: 'FFEDF3FF' },
+};
+const FONT_ANIMAIS: Partial<ExcelJS.Font> = { size: 10, color: { argb: 'FF2563EB' }, bold: true };
+
 const ALIGN_CENTER: Partial<ExcelJS.Alignment> = {
   horizontal: 'center',
   vertical: 'middle',
@@ -90,11 +97,13 @@ const ALIGN_LEFT_MIDDLE: Partial<ExcelJS.Alignment> = {
 /**
  * Generate styled Excel file matching the on-screen table layout
  */
-export async function generateExcel(lots: Lot[], handlingDates: HandlingDate[]): Promise<void> {
+export async function generateExcel(lots: Lot[], handlingDates: HandlingDate[], roundSuccessRates?: readonly number[]): Promise<void> {
   if (lots.length === 0) {
     alert('Nenhum lote para exportar');
     return;
   }
+
+  const effectiveRates = roundSuccessRates ?? [...DEFAULT_ROUND_SUCCESS_RATES];
 
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Calculadora IATF';
@@ -329,8 +338,89 @@ export async function generateExcel(lots: Lot[], handlingDates: HandlingDate[]):
     }
     r++;
 
-    // === Merge: lot name cell across 3 data rows (column 1) ===
-    ws.mergeCells(dataStartRow, 1, dataStartRow + 2, 1);
+    // === Row: Prov. Parição ===
+    ws.getCell(r, 2).value = 'Prov. Parição';
+    ws.getCell(r, 2).font = FONT_LABEL;
+    ws.getCell(r, 2).fill = FILL_LABEL;
+    ws.getCell(r, 2).border = THIN_BORDER;
+    ws.getCell(r, 2).alignment = ALIGN_LEFT_MIDDLE;
+
+    const FILL_PARICAO: ExcelJS.Fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFF0F7ED' },
+    };
+    const FONT_PARICAO: Partial<ExcelJS.Font> = { size: 10, color: { argb: 'FF5A7A3A' }, bold: true };
+
+    col = 3;
+    for (let ri = 0; ri < DEFAULT_ROUNDS; ri++) {
+      const lastPd = protocolDays[protocolDays.length - 1] ?? 0;
+      const startOffset = lot.getRoundStartOffset(ri);
+      const paricaoDate = addDaysToDateOnly(lot.d0, startOffset + lastPd + GESTACAO_DIAS);
+
+      for (let pdIdx = 0; pdIdx < protocolDays.length; pdIdx++) {
+        const cell = ws.getCell(r, col);
+        const isLast = pdIdx === protocolDays.length - 1;
+        if (isLast) {
+          cell.value = formatDateBR(paricaoDate);
+          cell.font = FONT_PARICAO;
+          cell.fill = FILL_PARICAO;
+        } else {
+          cell.value = '';
+          cell.font = FONT_LABEL;
+        }
+        cell.alignment = ALIGN_CENTER;
+        cell.border = THIN_BORDER;
+        col++;
+      }
+      if (ri < DEFAULT_ROUNDS - 1) {
+        const gapCell = ws.getCell(r, col);
+        gapCell.value = '';
+        gapCell.border = NO_BORDER;
+        col++;
+      }
+    }
+    r++;
+
+    // === Row: Qtd. Animais ===
+    const animalsPerRound = lot.getAnimalsPerRound(effectiveRates, DEFAULT_ROUNDS);
+
+    ws.getCell(r, 2).value = 'Qtd. Animais';
+    ws.getCell(r, 2).font = FONT_LABEL;
+    ws.getCell(r, 2).fill = FILL_LABEL;
+    ws.getCell(r, 2).border = THIN_BORDER;
+    ws.getCell(r, 2).alignment = ALIGN_LEFT_MIDDLE;
+
+    col = 3;
+    for (let ri = 0; ri < DEFAULT_ROUNDS; ri++) {
+      const count = animalsPerRound[ri] ?? 0;
+
+      for (let pdIdx = 0; pdIdx < protocolDays.length; pdIdx++) {
+        const cell = ws.getCell(r, col);
+        const isFirst = pdIdx === 0;
+        if (isFirst) {
+          cell.value = count;
+          cell.font = FONT_ANIMAIS;
+          cell.fill = FILL_ANIMAIS;
+        } else {
+          cell.value = '';
+          cell.font = FONT_LABEL;
+        }
+        cell.alignment = ALIGN_CENTER;
+        cell.border = THIN_BORDER;
+        col++;
+      }
+      if (ri < DEFAULT_ROUNDS - 1) {
+        const gapCell = ws.getCell(r, col);
+        gapCell.value = '';
+        gapCell.border = NO_BORDER;
+        col++;
+      }
+    }
+    r++;
+
+    // === Merge: lot name cell across 5 data rows (column 1) ===
+    ws.mergeCells(dataStartRow, 1, dataStartRow + 4, 1);
     const lotNameCell = ws.getCell(dataStartRow, 1);
     lotNameCell.value = lot.name;
     lotNameCell.font = FONT_LOT_NAME;
@@ -340,13 +430,15 @@ export async function generateExcel(lots: Lot[], handlingDates: HandlingDate[]):
     // Apply borders to all merged cells in lot name column
     ws.getCell(dataStartRow + 1, 1).border = THIN_BORDER;
     ws.getCell(dataStartRow + 2, 1).border = THIN_BORDER;
+    ws.getCell(dataStartRow + 3, 1).border = THIN_BORDER;
+    ws.getCell(dataStartRow + 4, 1).border = THIN_BORDER;
 
-    // === Merge: gap columns across 3 data rows ===
+    // === Merge: gap columns across 5 data rows ===
     col = 3;
     for (let ri = 0; ri < DEFAULT_ROUNDS; ri++) {
       col += lotPdCount;
       if (ri < DEFAULT_ROUNDS - 1) {
-        ws.mergeCells(dataStartRow, col, dataStartRow + 2, col);
+        ws.mergeCells(dataStartRow, col, dataStartRow + 4, col);
         const gapMergedCell = ws.getCell(dataStartRow, col);
         gapMergedCell.alignment = ALIGN_CENTER;
         col++;

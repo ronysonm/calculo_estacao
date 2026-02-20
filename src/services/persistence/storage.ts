@@ -14,6 +14,7 @@ interface StorageData {
   version: number;
   lots: ReturnType<Lot['toJSON']>[];
   customProtocols: ReturnType<Protocol['toJSON']>[];
+  roundSuccessRates?: readonly number[] | undefined;
   savedAt: string;
 }
 
@@ -25,13 +26,14 @@ export class EstacaoStorage {
    * @param customProtocols - Custom protocols (optional)
    * @returns true if saved successfully, false if quota exceeded
    */
-  save(lots: Lot[], customProtocols: Protocol[] = []): boolean {
+  save(lots: Lot[], customProtocols: Protocol[] = [], roundSuccessRates?: readonly number[]): boolean {
     try {
       // Check size before saving
       const data: StorageData = {
         version: VERSION,
         lots: lots.map((lot) => lot.toJSON()),
         customProtocols: customProtocols.map((p) => p.toJSON()),
+        roundSuccessRates,
         savedAt: new Date().toISOString(),
       };
 
@@ -68,7 +70,7 @@ export class EstacaoStorage {
    *
    * @returns Loaded data or null if not found/invalid
    */
-  load(): { lots: Lot[]; customProtocols: Protocol[] } | null {
+  load(): { lots: Lot[]; customProtocols: Protocol[]; roundSuccessRates?: readonly number[] | undefined } | null {
     try {
       const json = localStorage.getItem(STORAGE_KEY);
       if (!json) return null;
@@ -88,7 +90,7 @@ export class EstacaoStorage {
         Protocol.fromJSON(pData)
       );
 
-      return { lots, customProtocols };
+      return { lots, customProtocols, roundSuccessRates: data.roundSuccessRates };
     } catch (error) {
       console.error('Failed to load from localStorage:', error);
       return null;

@@ -9,7 +9,7 @@ import { useState, useEffect } from 'preact/hooks';
 import { lotsSignal, addLot, setLots } from '@/state/signals/lots';
 import { DateOnly } from '@/domain/value-objects/DateOnly';
 import { addDaysToDateOnly } from '@/core/date-engine/utils';
-import { PREDEFINED_PROTOCOLS } from '@/domain/constants';
+import { PREDEFINED_PROTOCOLS, DEFAULT_ANIMAL_COUNT } from '@/domain/constants';
 import { ExportDialog } from '@/components/Export/ExportDialog';
 import { optimizerService } from '@/services/optimization/optimizer-service';
 import {
@@ -43,6 +43,7 @@ export function LotForm() {
   const [lotName, setLotName] = useState('');
   const [d0Date, setD0Date] = useState(getNextDefaultD0);
   const [selectedProtocolId, setSelectedProtocolId] = useState(PREDEFINED_PROTOCOLS[0]!.id);
+  const [animalCount, setAnimalCount] = useState(DEFAULT_ANIMAL_COUNT);
   const [showValidationModal, setShowValidationModal] = useState(false);
   
   // Estados para UI de otimizacao
@@ -93,11 +94,12 @@ export function LotForm() {
 
     const protocol = PREDEFINED_PROTOCOLS.find((p) => p.id === selectedProtocolId)!;
 
-    addLot(lotName, d0, protocol);
+    addLot(lotName, d0, protocol, animalCount);
 
     // Reset form - advance D0 by 1 day for next lot
     setLotName('');
     setD0Date(addDaysToDateOnly(d0, 1).toISOString());
+    setAnimalCount(DEFAULT_ANIMAL_COUNT);
   };
 
   /**
@@ -183,6 +185,18 @@ export function LotForm() {
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label htmlFor="animalCount">Quantidade de Animais</label>
+          <input
+            id="animalCount"
+            type="number"
+            min="1"
+            max="10000"
+            value={animalCount}
+            onInput={(e) => setAnimalCount(Math.max(1, parseInt((e.target as HTMLInputElement).value) || 1))}
+          />
         </div>
 
         <button type="submit" class="btn-primary">

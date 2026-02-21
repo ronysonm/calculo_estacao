@@ -1,58 +1,80 @@
 /**
  * Conflicts State - Derived reactive state for conflict detection
- *
- * Automatically recalculates handling dates and conflicts whenever lots change.
- * Uses computed signals for efficient reactivity.
  */
 
-import { computed } from '@preact/signals';
+import { signal, computed } from '@preact/signals';
 import { lotsSignal } from './lots';
 import { DateOnly } from '@/domain/value-objects/DateOnly';
 import { HandlingDate } from '@/domain/value-objects/HandlingDate';
 import { Conflict } from '@/domain/value-objects/Conflict';
+import {
+  CustomHoliday,
+  Holiday,
+  expandNationalHolidays,
+} from '@/domain/value-objects/Holiday';
 import { calculateAllHandlingDates } from '@/core/date-engine/calculator';
 import { detectConflicts } from '@/core/conflict/detector';
 import { DEFAULT_ROUNDS } from '@/domain/constants';
 
 /**
- * Computed signal: all handling dates for all lots
- * Auto-updates whenever lotsSignal changes
+ * Mutable signal: user-defined custom holidays (persisted per-estação)
+ */
+export const customHolidaysSignal = signal<CustomHoliday[]>([]);
+
+export function setCustomHolidays(holidays: CustomHoliday[]): void {
+  customHolidaysSignal.value = holidays;
+}
+
+/**
+ * Computed: all handling dates for all lots
  */
 export const handlingDatesSignal = computed<HandlingDate[]>(() => {
   return calculateAllHandlingDates(lotsSignal.value, DEFAULT_ROUNDS);
 });
 
 /**
- * Computed signal: all conflicts (Sundays + Overlaps)
- * Auto-updates whenever handlingDatesSignal changes
+ * Computed: expanded national + custom holidays for years in the current cycle
  */
-export const conflictsSignal = computed<Conflict[]>(() => {
-  return detectConflicts(handlingDatesSignal.value);
+export const allHolidaysSignal = computed<Holiday[]>(() => {
+  const handlingDates = handlingDatesSignal.value;
+  const years = [...new Set(handlingDates.map((hd) => hd.date.year))];
+  if (years.length === 0) {
+    years.push(new Date().getFullYear());
+  }
+  const national = expandNationalHolidays(years);
+  const custom: Holiday[] = customHolidaysSignal.value.map((ch) => ({
+    date: ch.date,
+    name: ch.name,
+    isCustom: true,
+  }));
+  return [...national, ...custom];
 });
 
 /**
- * Computed signal: conflict summary
- * Auto-updates whenever conflictsSignal changes
+ * Computed: all conflicts (Sunday + Overlap + Holiday)
+ */
+export const conflictsSignal = computed<Conflict[]>(() => {
+  return detectConflicts(handlingDatesSignal.value, allHolidaysSignal.value);
+});
+
+/**
+ * Computed: conflict summary including holiday count
  */
 export const conflictSummarySignal = computed<{
   total: number;
   sundays: number;
   overlaps: number;
+  holidays: number;
 }>(() => {
   const conflicts = conflictsSignal.value;
   const sundays = conflicts.filter((c) => c.type === 'sunday').length;
   const overlaps = conflicts.filter((c) => c.type === 'overlap').length;
-
-  return {
-    total: conflicts.length,
-    sundays,
-    overlaps,
-  };
+  const holidays = conflicts.filter((c) => c.type === 'holiday').length;
+  return { total: conflicts.length, sundays, overlaps, holidays };
 });
 
 /**
- * Computed signal: global cycle start = earliest D0 among all lots
- * Returns null when there are no lots
+ * Computed: global cycle start = earliest D0 among all lots
  */
 export const cycleStartSignal = computed<DateOnly | null>(() => {
   const lots = lotsSignal.value;

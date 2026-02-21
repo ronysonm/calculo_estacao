@@ -78,7 +78,7 @@ export function HolidaysModal({ onClose }: HolidaysModalProps) {
             type="date"
             value={newDate}
             onInput={(e) => setNewDate((e.target as HTMLInputElement).value)}
-            style={{ flex: '0 0 auto' }}
+            style={{ flex: '0 0 auto', width: 'auto' }}
           />
           <input
             type="text"
@@ -86,7 +86,7 @@ export function HolidaysModal({ onClose }: HolidaysModalProps) {
             value={newName}
             onInput={(e) => setNewName((e.target as HTMLInputElement).value)}
             onKeyDown={handleKeyDown}
-            style={{ flex: 1 }}
+            style={{ flex: 1, minWidth: 0 }}
           />
           <button type="button" class="btn-primary" onClick={handleAdd}>
             +
@@ -129,7 +129,7 @@ export function HolidaysModal({ onClose }: HolidaysModalProps) {
                   }}
                   onClick={() => handleRemove(i)}
                 >
-                  \u2715
+                  {'\u2715'}
                 </button>
               </li>
             ))}

@@ -171,6 +171,12 @@ describe('twoPointCrossover', () => {
   });
 
   it('should exchange genetic material between parents', () => {
+    // Mock Math.random to produce deterministic crossover points:
+    // point1 = floor(0.1 * 3) = 0, point2 = floor(0.7 * 3) = 2 → swap genes [0,2)
+    const spy = vi.spyOn(Math, 'random')
+      .mockReturnValueOnce(0.1)
+      .mockReturnValueOnce(0.7);
+
     const parent1: Chromosome = {
       genes: [
         { lotId: 'lot1', d0Offset: 0, roundGaps: [21, 21, 21] },
@@ -191,20 +197,17 @@ describe('twoPointCrossover', () => {
 
     const [child1, child2] = twoPointCrossover(parent1, parent2);
 
-    // Children should be different from both parents
-    const child1Same = child1.genes.every((g, i) =>
-      parent1.genes[i]
-        ? g.d0Offset === parent1.genes[i]!.d0Offset
-        : false
-    );
-    const child2Same = child2.genes.every((g, i) =>
-      parent2.genes[i]
-        ? g.d0Offset === parent2.genes[i]!.d0Offset
-        : false
-    );
+    // With crossover range [0,2): child1 gets parent2 genes 0-1, parent1 gene 2
+    expect(child1.genes[0]!.d0Offset).toBe(10);
+    expect(child1.genes[1]!.d0Offset).toBe(10);
+    expect(child1.genes[2]!.d0Offset).toBe(0);
 
-    // At least one should be different (unless unlucky crossover points)
-    expect(child1Same && child2Same).toBe(false);
+    // child2 gets parent1 genes 0-1, parent2 gene 2
+    expect(child2.genes[0]!.d0Offset).toBe(0);
+    expect(child2.genes[1]!.d0Offset).toBe(0);
+    expect(child2.genes[2]!.d0Offset).toBe(10);
+
+    spy.mockRestore();
   });
 });
 

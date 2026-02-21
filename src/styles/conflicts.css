@@ -94,3 +94,22 @@
   background-color: var(--color-conflict-overlap);
 }
 
+/* Holiday conflict */
+.conflict-holiday {
+  background-color: var(--color-conflict-holiday) !important;
+  color: white !important;
+}
+
+.conflict-holiday .date-cell-day {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.conflict-badge-holiday {
+  background-color: var(--color-conflict-holiday);
+  color: white;
+}
+
+.conflict-legend-holiday .conflict-legend-color {
+  background-color: var(--color-conflict-holiday);
+}
+

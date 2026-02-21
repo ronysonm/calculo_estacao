@@ -20,6 +20,7 @@ import {
   setOptimizationScenarios,
   clearOptimizationScenarios,
 } from '@/state/signals/optimization';
+import { allHolidaysSignal } from '@/state/signals/conflicts';
 import { OptimizationModal } from '@/components/Optimization/OptimizationModal';
 import { OptimizationScenario } from '@/domain/value-objects/OptimizationScenario';
 
@@ -118,7 +119,8 @@ export function LotForm() {
       const { scenarios, totalCombinations } = await optimizerService.optimizeSchedule(
         lots,
         maxD0Adjustment,
-        30000 // 30 segundos
+        30000, // 30 segundos
+        allHolidaysSignal.value
       );
 
       setOptimizationScenarios(scenarios, { totalCombinations });

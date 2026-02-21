@@ -2,6 +2,7 @@ import { Lot } from '@/domain/value-objects/Lot';
 import { calculateAllHandlingDates } from '@/core/date-engine/calculator';
 import { detectConflicts } from '@/core/conflict/detector';
 import { isSunday } from '@/core/date-engine/utils';
+import { Holiday } from '@/domain/value-objects/Holiday';
 import { ScheduleObjectives } from '@/domain/value-objects/OptimizationScenario';
 import { Chromosome, ScenarioWeights, ScenarioProfile } from './types';
 
@@ -17,6 +18,7 @@ export const DEFAULT_WEIGHTS: ScenarioWeights = {
   totalCycleDays: 1,
   d0OffsetPenalty: 0,
   gapChangePenalty: 0,
+  holidayConflicts: 1000,
 };
 
 /**
@@ -35,6 +37,7 @@ export const SCENARIO_PROFILES: ScenarioProfile[] = [
       totalCycleDays: 0.1,
       d0OffsetPenalty: 0,
       gapChangePenalty: 0,
+      holidayConflicts: 2000,
     },
   },
   {
@@ -49,6 +52,7 @@ export const SCENARIO_PROFILES: ScenarioProfile[] = [
       totalCycleDays: 100,
       d0OffsetPenalty: 0,
       gapChangePenalty: 0,
+      holidayConflicts: 500,
     },
   },
   {
@@ -63,6 +67,7 @@ export const SCENARIO_PROFILES: ScenarioProfile[] = [
       totalCycleDays: 1,
       d0OffsetPenalty: 0,
       gapChangePenalty: 50,
+      holidayConflicts: 1000,
     },
   },
   {
@@ -77,6 +82,7 @@ export const SCENARIO_PROFILES: ScenarioProfile[] = [
       totalCycleDays: 1,
       d0OffsetPenalty: 200,
       gapChangePenalty: 200,
+      holidayConflicts: 1000,
     },
   },
 ];
@@ -84,7 +90,10 @@ export const SCENARIO_PROFILES: ScenarioProfile[] = [
 /**
  * Calcula objetivos de um cronograma
  */
-export function calculateObjectives(lots: Lot[]): ScheduleObjectives {
+export function calculateObjectives(
+  lots: Lot[],
+  holidays: readonly Holiday[] = []
+): ScheduleObjectives {
   const allDates = calculateAllHandlingDates(lots, 4);
   const conflicts = detectConflicts(allDates);
 
@@ -148,6 +157,14 @@ export function calculateObjectives(lots: Lot[]): ScheduleObjectives {
     }
   }
 
+  // Count holiday conflicts
+  let holidayConflicts = 0;
+  for (const hd of allDates) {
+    if (holidays.some((h) => h.date.equals(hd.date))) {
+      holidayConflicts++;
+    }
+  }
+
   return {
     sundaysRounds12,
     sundaysRounds34,
@@ -155,6 +172,7 @@ export function calculateObjectives(lots: Lot[]): ScheduleObjectives {
     overlapsRounds34,
     totalCycleDays,
     intervalViolations,
+    holidayConflicts,
   };
 }
 
@@ -171,7 +189,8 @@ export function scalarizeObjectives(
     obj.sundaysRounds12 * weights.sundaysRounds12 +
     obj.overlapsRounds34 * weights.overlapsRounds34 +
     obj.sundaysRounds34 * weights.sundaysRounds34 +
-    obj.totalCycleDays * weights.totalCycleDays;
+    obj.totalCycleDays * weights.totalCycleDays +
+    (obj.holidayConflicts ?? 0) * weights.holidayConflicts;
 
   return penalty;
 }
@@ -191,7 +210,8 @@ export function calculateFitness(lots: Lot[]): number {
 export function evaluateChromosome(
   chromosome: Chromosome,
   baseLots: Lot[],
-  weights: ScenarioWeights = DEFAULT_WEIGHTS
+  weights: ScenarioWeights = DEFAULT_WEIGHTS,
+  holidays: readonly Holiday[] = []
 ): { fitness: number; objectives: ScheduleObjectives } {
   // Aplicar offsets de D0 e roundGaps do cromossomo aos lotes
   const adjustedLots = baseLots.map((lot) => {
@@ -213,7 +233,7 @@ export function evaluateChromosome(
     return adjusted;
   });
 
-  const objectives = calculateObjectives(adjustedLots);
+  const objectives = calculateObjectives(adjustedLots, holidays);
   let penalty = scalarizeObjectives(objectives, weights);
 
   // Penalidade por deslocamento de D0 (para cenario conservador)

@@ -30,6 +30,7 @@ export interface ScenarioWeights {
   totalCycleDays: number;
   d0OffsetPenalty: number;
   gapChangePenalty: number;
+  holidayConflicts: number;
 }
 
 /**

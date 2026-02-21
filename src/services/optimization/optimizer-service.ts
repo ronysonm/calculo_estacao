@@ -1,4 +1,5 @@
 import { Lot } from '@/domain/value-objects/Lot';
+import { Holiday } from '@/domain/value-objects/Holiday';
 import { OptimizationScenario } from '@/domain/value-objects/OptimizationScenario';
 
 /**
@@ -13,7 +14,8 @@ export class OptimizerService {
   async optimizeSchedule(
     lots: Lot[],
     maxD0Adjustment: number = 15,
-    timeLimitMs: number = 30000
+    timeLimitMs: number = 30000,
+    holidays: readonly Holiday[] = []
   ): Promise<{ scenarios: OptimizationScenario[]; totalCombinations: number }> {
     return new Promise((resolve, reject) => {
       // Criar worker
@@ -75,6 +77,14 @@ export class OptimizerService {
         lots: lots.map((lot) => lot.toJSON()),
         maxD0Adjustment,
         timeLimitMs,
+        customHolidays: holidays
+          .filter((h) => h.isCustom)
+          .map((h) => ({
+            year: h.date.year,
+            month: h.date.month,
+            day: h.date.day,
+            name: h.name,
+          })),
       });
     });
   }

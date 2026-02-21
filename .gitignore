@@ -42,3 +42,6 @@ build
 
 # Playwright MCP
 .playwright-mcp/
+
+# Git worktrees
+.worktrees/

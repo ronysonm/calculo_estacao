@@ -12,6 +12,7 @@ import { formatDateBR, daysBetween } from '@/core/date-engine/utils';
 import { DEFAULT_ROUNDS } from '@/domain/constants';
 import { useConflictSummary } from '@/hooks/useConflicts';
 import { usePersistence } from '@/hooks/usePersistence';
+import { HolidaysModal } from '@/components/HolidaysModal/HolidaysModal';
 import '@/styles/global.css';
 import '@/styles/conflicts.css';
 import '@/styles/print.css';
@@ -30,6 +31,7 @@ export function App() {
   }, []);
 
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showHolidaysModal, setShowHolidaysModal] = useState(false);
 
   const handleReset = () => {
     initializeDefaultLots();
@@ -94,27 +96,42 @@ export function App() {
               )}
             </div>
 
-            {/* Conflict summary */}
-            <div class="conflict-summary">
-              {conflictSummary.total === 0 ? (
-                <span class="conflict-badge conflict-badge-none">✓ Sem conflitos</span>
-              ) : (
-                <>
-                  <span style={{ fontWeight: 500 }}>
-                    {conflictSummary.total} conflito{conflictSummary.total > 1 ? 's' : ''}
-                  </span>
-                  {conflictSummary.sundays > 0 && (
-                    <span class="conflict-badge conflict-badge-sunday">
-                      {conflictSummary.sundays} domingo{conflictSummary.sundays > 1 ? 's' : ''}
+            {/* Conflict summary + Feriados button */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+              <div class="conflict-summary">
+                {conflictSummary.total === 0 ? (
+                  <span class="conflict-badge conflict-badge-none">{'\u2713'} Sem conflitos</span>
+                ) : (
+                  <>
+                    <span style={{ fontWeight: 500 }}>
+                      {conflictSummary.total} conflito{conflictSummary.total > 1 ? 's' : ''}
                     </span>
-                  )}
-                  {conflictSummary.overlaps > 0 && (
-                    <span class="conflict-badge conflict-badge-overlap">
-                      {conflictSummary.overlaps} sobreposiç{conflictSummary.overlaps > 1 ? 'ões' : 'ão'}
-                    </span>
-                  )}
-                </>
-              )}
+                    {conflictSummary.sundays > 0 && (
+                      <span class="conflict-badge conflict-badge-sunday">
+                        {conflictSummary.sundays} domingo{conflictSummary.sundays > 1 ? 's' : ''}
+                      </span>
+                    )}
+                    {conflictSummary.overlaps > 0 && (
+                      <span class="conflict-badge conflict-badge-overlap">
+                        {conflictSummary.overlaps} sobreposic{conflictSummary.overlaps > 1 ? '\u00f5es' : '\u00e3o'}
+                      </span>
+                    )}
+                    {conflictSummary.holidays > 0 && (
+                      <span class="conflict-badge conflict-badge-holiday">
+                        {conflictSummary.holidays} feriado{conflictSummary.holidays > 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+              <button
+                type="button"
+                class="btn-secondary"
+                style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                onClick={() => setShowHolidaysModal(true)}
+              >
+                Feriados
+              </button>
             </div>
           </div>
         </div>
@@ -199,10 +216,18 @@ export function App() {
           </div>
           <div class="conflict-legend-item conflict-legend-overlap">
             <span class="conflict-legend-color"></span>
-            <span>Sobreposição de lotes</span>
+            <span>Sobreposicao de lotes</span>
+          </div>
+          <div class="conflict-legend-item conflict-legend-holiday">
+            <span class="conflict-legend-color"></span>
+            <span>Feriado</span>
           </div>
         </div>
       </footer>
+
+      {showHolidaysModal && (
+        <HolidaysModal onClose={() => setShowHolidaysModal(false)} />
+      )}
     </div>
   );
 }

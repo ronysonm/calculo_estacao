@@ -4,7 +4,7 @@
 
 Calculadora web para planejamento de estacao IATF (pecuaria de corte), com:
 - calculo automatico de datas por lote e rodada
-- deteccao de conflitos (domingo e sobreposicao)
+- deteccao de conflitos (domingo, sobreposicao e feriados)
 - ajuste manual de D0 e gaps entre rodadas
 - otimizacao automatica via worker (GA + CP-SAT para instancias pequenas)
 - exportacao para PDF e Excel
@@ -32,7 +32,7 @@ Aplicacao 100% client-side (sem backend).
 
 ## Arquitetura (paths principais)
 
-- `src/domain/value-objects/` - objetos de valor imutaveis (`DateOnly`, `Lot`, `Protocol`, `Conflict`, `OptimizationScenario`)
+- `src/domain/value-objects/` - objetos de valor imutaveis (`DateOnly`, `Lot`, `Protocol`, `Conflict`, `Holiday`, `OptimizationScenario`)
 - `src/core/date-engine/` - calculo de datas e utilitarios
 - `src/core/conflict/` - detector, resolver, auto-stagger
 - `src/core/optimization/` - motor de otimizacao (GA, CP-SAT, hibrido)
@@ -52,13 +52,17 @@ Aplicacao 100% client-side (sem backend).
 6. Conflitos:
    - `sunday`: manejo em domingo
    - `overlap`: lotes no mesmo dia
-   - UI combina ambos como `multiple`
+   - `holiday`: manejo em feriado (nacional ou personalizado)
+   - UI combina `sunday` + `overlap` como `multiple`
+   - Prioridade de exibicao: `multiple > sunday > overlap > holiday`
 
 ## Fluxo de estado
 
 - `lotsSignal` e a fonte primaria.
 - `handlingDatesSignal` e derivado de `lotsSignal`.
-- `conflictsSignal` e `conflictSummarySignal` sao derivados de `handlingDatesSignal`.
+- `customHolidaysSignal` armazena feriados personalizados (persistidos por estacao).
+- `allHolidaysSignal` combina feriados nacionais (expandidos por ano) + personalizados.
+- `conflictsSignal` e `conflictSummarySignal` sao derivados de `handlingDatesSignal` + `allHolidaysSignal`.
 - Persistencia:
   - hook `usePersistence()` faz load inicial e auto-save com debounce.
   - storage key: `estacao-iatf-data`.

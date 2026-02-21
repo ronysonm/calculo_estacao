@@ -64,6 +64,12 @@ const FILL_MULTIPLE: ExcelJS.Fill = {
   fgColor: { argb: 'FFFFD9D9' },
 };
 
+const FILL_HOLIDAY: ExcelJS.Fill = {
+  type: 'pattern',
+  pattern: 'solid',
+  fgColor: { argb: 'FFE8D5F5' },
+};
+
 const FONT_TITLE: Partial<ExcelJS.Font> = { bold: true, size: 14 };
 const FONT_SUBTITLE: Partial<ExcelJS.Font> = { size: 10, italic: true };
 const FONT_ROUND_HEADER: Partial<ExcelJS.Font> = { bold: true, size: 11 };
@@ -75,6 +81,7 @@ const FONT_GAP: Partial<ExcelJS.Font> = { bold: true, size: 10 };
 const FONT_CONFLICT_SUNDAY: Partial<ExcelJS.Font> = { size: 10, color: { argb: 'FFCC0000' } };
 const FONT_CONFLICT_OVERLAP: Partial<ExcelJS.Font> = { size: 10, color: { argb: 'FFCC6600' } };
 const FONT_CONFLICT_MULTIPLE: Partial<ExcelJS.Font> = { size: 10, color: { argb: 'FFCC0000' } };
+const FONT_CONFLICT_HOLIDAY: Partial<ExcelJS.Font> = { size: 10, color: { argb: 'FF7B2D8E' } };
 
 const FILL_ANIMAIS: ExcelJS.Fill = {
   type: 'pattern',
@@ -508,7 +515,7 @@ export async function generateExcel(lots: Lot[], handlingDates: HandlingDate[], 
 /**
  * Apply conflict-specific fill and font to a cell
  */
-function applyConflictStyle(cell: ExcelJS.Cell, conflict: 'sunday' | 'overlap' | 'multiple'): void {
+function applyConflictStyle(cell: ExcelJS.Cell, conflict: 'sunday' | 'overlap' | 'holiday' | 'multiple'): void {
   switch (conflict) {
     case 'sunday':
       cell.fill = FILL_SUNDAY;
@@ -517,6 +524,10 @@ function applyConflictStyle(cell: ExcelJS.Cell, conflict: 'sunday' | 'overlap' |
     case 'overlap':
       cell.fill = FILL_OVERLAP;
       cell.font = FONT_CONFLICT_OVERLAP;
+      break;
+    case 'holiday':
+      cell.fill = FILL_HOLIDAY;
+      cell.font = FONT_CONFLICT_HOLIDAY;
       break;
     case 'multiple':
       cell.fill = FILL_MULTIPLE;

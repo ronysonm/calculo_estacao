@@ -58,7 +58,11 @@
   /* Ensure conflict colors print */
   .conflict-sunday,
   .conflict-overlap,
-  .conflict-multiple {
+  .conflict-holiday,
+  .conflict-sunday-overlap,
+  .conflict-sunday-holiday,
+  .conflict-overlap-holiday,
+  .conflict-sunday-overlap-holiday {
     print-color-adjust: exact !important;
     -webkit-print-color-adjust: exact !important;
   }

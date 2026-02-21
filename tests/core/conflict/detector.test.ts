@@ -64,13 +64,40 @@ describe('getConflictTypeForCell with holidays', () => {
     expect(result).toBe('holiday');
   });
 
-  it('sunday takes priority over holiday', () => {
+  it('returns sunday-holiday when Sunday + holiday', () => {
     // Feb 22, 2026 is a Sunday; we also mark it as a custom holiday
     const date = DateOnly.create(2026, 2, 22);
     const hd = makeHandlingDate(date);
     const customHoliday = { date, name: 'Feriado no Domingo', isCustom: true };
     const result = getConflictTypeForCell(date, 'lot-1', [hd], [customHoliday]);
-    expect(result).toBe('sunday'); // sunday takes priority
+    expect(result).toBe('sunday-holiday');
+  });
+
+  it('returns overlap-holiday when overlap + holiday (non-Sunday)', () => {
+    // Sep 7, 2026 is Monday (Independência) — two lots on same date
+    const date = DateOnly.create(2026, 9, 7);
+    const hd1 = makeHandlingDate(date, 'lot-1');
+    const hd2 = makeHandlingDate(date, 'lot-2');
+    const holidays = expandNationalHolidays([2026]);
+    const result = getConflictTypeForCell(date, 'lot-1', [hd1, hd2], holidays);
+    expect(result).toBe('overlap-holiday');
+  });
+
+  it('returns sunday-overlap when Sunday + overlap (no holiday)', () => {
+    const date = DateOnly.create(2026, 2, 22); // Sunday
+    const hd1 = makeHandlingDate(date, 'lot-1');
+    const hd2 = makeHandlingDate(date, 'lot-2');
+    const result = getConflictTypeForCell(date, 'lot-1', [hd1, hd2], []);
+    expect(result).toBe('sunday-overlap');
+  });
+
+  it('returns sunday-overlap-holiday when all three conflicts', () => {
+    const date = DateOnly.create(2026, 2, 22); // Sunday
+    const hd1 = makeHandlingDate(date, 'lot-1');
+    const hd2 = makeHandlingDate(date, 'lot-2');
+    const customHoliday = { date, name: 'Feriado no Domingo', isCustom: true };
+    const result = getConflictTypeForCell(date, 'lot-1', [hd1, hd2], [customHoliday]);
+    expect(result).toBe('sunday-overlap-holiday');
   });
 
   it('returns null when date is not a holiday and no other conflicts', () => {

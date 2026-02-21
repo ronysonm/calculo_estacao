@@ -298,8 +298,23 @@
   color: #cc6600;
 }
 
-.conflict-multiple {
+.conflict-sunday-overlap {
   background-color: rgba(255, 68, 68, 0.25) !important;
+  color: #cc0000;
+}
+
+.conflict-sunday-holiday {
+  background-color: rgba(255, 68, 68, 0.2) !important;
+  color: #cc0000;
+}
+
+.conflict-overlap-holiday {
+  background-color: rgba(255, 170, 68, 0.2) !important;
+  color: #cc6600;
+}
+
+.conflict-sunday-overlap-holiday {
+  background-color: rgba(255, 68, 68, 0.3) !important;
   color: #cc0000;
 }
 

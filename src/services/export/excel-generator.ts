@@ -513,9 +513,11 @@ export async function generateExcel(lots: Lot[], handlingDates: HandlingDate[], 
 }
 
 /**
- * Apply conflict-specific fill and font to a cell
+ * Apply conflict-specific fill and font to a cell.
+ * For combined conflicts, uses the highest-priority single color
+ * (Excel cells don't support gradient fills).
  */
-function applyConflictStyle(cell: ExcelJS.Cell, conflict: 'sunday' | 'overlap' | 'holiday' | 'multiple'): void {
+function applyConflictStyle(cell: ExcelJS.Cell, conflict: string): void {
   switch (conflict) {
     case 'sunday':
       cell.fill = FILL_SUNDAY;
@@ -529,9 +531,15 @@ function applyConflictStyle(cell: ExcelJS.Cell, conflict: 'sunday' | 'overlap' |
       cell.fill = FILL_HOLIDAY;
       cell.font = FONT_CONFLICT_HOLIDAY;
       break;
-    case 'multiple':
+    case 'sunday-overlap':
+    case 'sunday-holiday':
+    case 'sunday-overlap-holiday':
       cell.fill = FILL_MULTIPLE;
       cell.font = FONT_CONFLICT_MULTIPLE;
+      break;
+    case 'overlap-holiday':
+      cell.fill = FILL_OVERLAP;
+      cell.font = FONT_CONFLICT_OVERLAP;
       break;
   }
 }

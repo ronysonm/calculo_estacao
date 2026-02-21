@@ -80,19 +80,26 @@ export function detectHolidayConflicts(
     .map((hd) => Conflict.holiday(hd));
 }
 
+/** All possible conflict type values for a single cell */
+export type CellConflictType =
+  | 'sunday' | 'overlap' | 'holiday'
+  | 'sunday-overlap' | 'sunday-holiday' | 'overlap-holiday'
+  | 'sunday-overlap-holiday';
+
 /**
  * Get conflict type for a date cell (for table rendering).
  *
- * Priority: multiple > sunday > overlap > holiday
+ * Returns a combined type when multiple conflicts coincide,
+ * so the UI can render split-color cells.
  *
- * @returns 'sunday' | 'overlap' | 'holiday' | 'multiple' | null
+ * @returns CellConflictType or null if no conflict
  */
 export function getConflictTypeForCell(
   date: DateOnly,
   lotId: string,
   allHandlingDates: HandlingDate[],
   holidays: readonly Holiday[] = []
-): 'sunday' | 'overlap' | 'holiday' | 'multiple' | null {
+): CellConflictType | null {
   const handlingDate = allHandlingDates.find(
     (hd) => hd.date.equals(date) && hd.lotId === lotId
   );
@@ -107,9 +114,19 @@ export function getConflictTypeForCell(
 
   const isHolidayConflict = holidays.some((h) => h.date.equals(date));
 
-  if (isSundayConflict && isOverlapConflict) return 'multiple';
+  const count = +isSundayConflict + +isOverlapConflict + +isHolidayConflict;
+  if (count === 0) return null;
+
+  // Triple
+  if (isSundayConflict && isOverlapConflict && isHolidayConflict) return 'sunday-overlap-holiday';
+
+  // Double
+  if (isSundayConflict && isOverlapConflict) return 'sunday-overlap';
+  if (isSundayConflict && isHolidayConflict) return 'sunday-holiday';
+  if (isOverlapConflict && isHolidayConflict) return 'overlap-holiday';
+
+  // Single
   if (isSundayConflict) return 'sunday';
   if (isOverlapConflict) return 'overlap';
-  if (isHolidayConflict) return 'holiday';
-  return null;
+  return 'holiday';
 }

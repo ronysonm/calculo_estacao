@@ -48,11 +48,13 @@ const GAP_STYLE = {
 };
 
 /**
- * Apply conflict styling to a cell definition
+ * Apply conflict styling to a cell definition.
+ * For combined conflicts, uses the highest-priority single color
+ * (PDF cells don't support gradient fills).
  */
 function applyConflictStyle(
   cellStyles: Record<string, any>,
-  conflict: 'sunday' | 'overlap' | 'holiday' | 'multiple'
+  conflict: string
 ): void {
   switch (conflict) {
     case 'sunday':
@@ -67,9 +69,15 @@ function applyConflictStyle(
       cellStyles.fillColor = HOLIDAY_BG;
       cellStyles.textColor = HOLIDAY_TEXT;
       break;
-    case 'multiple':
+    case 'sunday-overlap':
+    case 'sunday-holiday':
+    case 'sunday-overlap-holiday':
       cellStyles.fillColor = MULTIPLE_BG;
       cellStyles.textColor = MULTIPLE_TEXT;
+      break;
+    case 'overlap-holiday':
+      cellStyles.fillColor = OVERLAP_BG;
+      cellStyles.textColor = OVERLAP_TEXT;
       break;
   }
 }

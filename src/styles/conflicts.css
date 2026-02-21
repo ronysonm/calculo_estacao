@@ -21,9 +21,25 @@
   color: rgba(255, 255, 255, 0.9) !important;
 }
 
-/* Multiple conflicts (both Sunday and overlap) */
-.conflict-multiple {
+/* Two conflicts — split diagonal */
+.conflict-sunday-overlap {
   background: linear-gradient(135deg, var(--color-conflict-sunday) 50%, var(--color-conflict-overlap) 50%) !important;
+  color: white !important;
+}
+
+.conflict-sunday-holiday {
+  background: linear-gradient(135deg, var(--color-conflict-sunday) 50%, var(--color-conflict-holiday) 50%) !important;
+  color: white !important;
+}
+
+.conflict-overlap-holiday {
+  background: linear-gradient(135deg, var(--color-conflict-overlap) 50%, var(--color-conflict-holiday) 50%) !important;
+  color: white !important;
+}
+
+/* Three conflicts — thirds diagonal */
+.conflict-sunday-overlap-holiday {
+  background: linear-gradient(135deg, var(--color-conflict-sunday) 33.33%, var(--color-conflict-overlap) 33.33%, var(--color-conflict-overlap) 66.66%, var(--color-conflict-holiday) 66.66%) !important;
   color: white !important;
 }
 

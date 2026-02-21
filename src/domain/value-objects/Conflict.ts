@@ -4,7 +4,7 @@ import { DateOnly } from './DateOnly';
 /**
  * Conflict types
  */
-export type ConflictType = 'sunday' | 'overlap';
+export type ConflictType = 'sunday' | 'overlap' | 'holiday';
 
 /**
  * Conflict - Represents a scheduling conflict
@@ -39,6 +39,13 @@ export class Conflict {
       throw new Error('Overlap conflict must have at least 2 handling dates');
     }
     return new Conflict('overlap', date, handlingDates);
+  }
+
+  /**
+   * Create a holiday conflict
+   */
+  static holiday(handlingDate: HandlingDate): Conflict {
+    return new Conflict('holiday', handlingDate.date, [handlingDate]);
   }
 
   /**

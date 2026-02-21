@@ -1,4 +1,5 @@
 import { Lot } from '@/domain/value-objects/Lot';
+import { Holiday } from '@/domain/value-objects/Holiday';
 import { Chromosome, Gene, ScenarioWeights } from './types';
 import { evaluateChromosome } from './fitness-calculator';
 
@@ -13,7 +14,8 @@ const VALID_GAPS = [21, 22, 23] as const;
  */
 export function nehInitialization(
   lots: Lot[],
-  weights?: ScenarioWeights
+  weights?: ScenarioWeights,
+  holidays: readonly Holiday[] = []
 ): Chromosome {
   // 1. Ordenar lotes por duracao total do protocolo (decrescente)
   const sortedLots = [...lots].sort((a, b) => {
@@ -43,7 +45,7 @@ export function nehInitialization(
             gene.roundGaps = [g0, g1, g2];
 
             const testChromosome = { genes: [...genes], fitness: 0 };
-            const { fitness } = evaluateChromosome(testChromosome, lots, weights);
+            const { fitness } = evaluateChromosome(testChromosome, lots, weights, holidays);
 
             if (fitness > bestFitness) {
               bestFitness = fitness;

@@ -9,7 +9,7 @@
 import { useState, useRef, useEffect } from 'preact/hooks';
 import { lotsSignal, changeLotRoundGap, changeLotD0, renameLot, changeLotProtocol, removeLot, changeLotAnimalCount } from '@/state/signals/lots';
 import { roundSuccessRatesSignal, setRoundSuccessRate } from '@/state/signals/success-rates';
-import { handlingDatesSignal, cycleStartSignal } from '@/state/signals/conflicts';
+import { handlingDatesSignal, cycleStartSignal, allHolidaysSignal } from '@/state/signals/conflicts';
 import { getDayOfWeekName, formatDateBR, addDaysToDateOnly, daysBetween } from '@/core/date-engine/utils';
 import { getConflictTypeForCell } from '@/core/conflict/detector';
 import { DEFAULT_ROUNDS, ROUND_NAMES, PREDEFINED_PROTOCOLS, GESTACAO_DIAS } from '@/domain/constants';
@@ -231,7 +231,7 @@ function LotBlock({
                     const hd = roundDates.find((h) => h.protocolDay === pd);
                     const dayName = hd ? getDayOfWeekName(hd.date) : '';
                     const conflictType = hd
-                      ? getConflictTypeForCell(hd.date, lot.id, allHandlingDates)
+                      ? getConflictTypeForCell(hd.date, lot.id, allHandlingDates, allHolidaysSignal.value)
                       : null;
                     return (
                       <td
@@ -282,7 +282,7 @@ function LotBlock({
                     const hd = roundDates.find((h) => h.protocolDay === pd);
                     const dateStr = hd ? formatDateBR(hd.date) : '';
                     const conflictType = hd
-                      ? getConflictTypeForCell(hd.date, lot.id, allHandlingDates)
+                      ? getConflictTypeForCell(hd.date, lot.id, allHandlingDates, allHolidaysSignal.value)
                       : null;
                     return (
                       <td

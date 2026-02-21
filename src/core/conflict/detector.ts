@@ -11,6 +11,7 @@
 import { HandlingDate } from '@/domain/value-objects/HandlingDate';
 import { Conflict } from '@/domain/value-objects/Conflict';
 import { DateOnly } from '@/domain/value-objects/DateOnly';
+import { Holiday } from '@/domain/value-objects/Holiday';
 import { isSunday } from '@/core/date-engine/utils';
 import { groupHandlingDatesByDate } from '@/core/date-engine/calculator';
 
@@ -20,17 +21,14 @@ import { groupHandlingDatesByDate } from '@/core/date-engine/calculator';
  * @param handlingDates - Array of handling dates to check
  * @returns Array of conflicts found
  */
-export function detectConflicts(handlingDates: HandlingDate[]): Conflict[] {
+export function detectConflicts(
+  handlingDates: HandlingDate[],
+  holidays: readonly Holiday[] = []
+): Conflict[] {
   const conflicts: Conflict[] = [];
-
-  // Detect Sunday conflicts (CONF-01)
-  const sundayConflicts = detectSundayConflicts(handlingDates);
-  conflicts.push(...sundayConflicts);
-
-  // Detect overlap conflicts (CONF-02)
-  const overlapConflicts = detectOverlapConflicts(handlingDates);
-  conflicts.push(...overlapConflicts);
-
+  conflicts.push(...detectSundayConflicts(handlingDates));
+  conflicts.push(...detectOverlapConflicts(handlingDates));
+  conflicts.push(...detectHolidayConflicts(handlingDates, holidays));
   return conflicts;
 }
 
@@ -70,18 +68,31 @@ function detectOverlapConflicts(handlingDates: HandlingDate[]): Conflict[] {
 }
 
 /**
- * Get conflict type for a date cell (for table rendering)
+ * Detect holiday conflicts — one per handling date that falls on a holiday.
+ */
+export function detectHolidayConflicts(
+  handlingDates: readonly HandlingDate[],
+  holidays: readonly Holiday[]
+): Conflict[] {
+  if (holidays.length === 0) return [];
+  return handlingDates
+    .filter((hd) => holidays.some((h) => h.date.equals(hd.date)))
+    .map((hd) => Conflict.holiday(hd));
+}
+
+/**
+ * Get conflict type for a date cell (for table rendering).
  *
- * @param date - Date to check
- * @param lotId - Lot ID
- * @param allHandlingDates - All handling dates
- * @returns 'sunday', 'overlap', 'multiple', or null
+ * Priority: multiple > sunday > overlap > holiday
+ *
+ * @returns 'sunday' | 'overlap' | 'holiday' | 'multiple' | null
  */
 export function getConflictTypeForCell(
   date: DateOnly,
   lotId: string,
-  allHandlingDates: HandlingDate[]
-): 'sunday' | 'overlap' | 'multiple' | null {
+  allHandlingDates: HandlingDate[],
+  holidays: readonly Holiday[] = []
+): 'sunday' | 'overlap' | 'holiday' | 'multiple' | null {
   const handlingDate = allHandlingDates.find(
     (hd) => hd.date.equals(date) && hd.lotId === lotId
   );
@@ -94,9 +105,11 @@ export function getConflictTypeForCell(
   const uniqueLotIds = new Set(sameDate.map((hd) => hd.lotId));
   const isOverlapConflict = uniqueLotIds.size > 1;
 
+  const isHolidayConflict = holidays.some((h) => h.date.equals(date));
+
   if (isSundayConflict && isOverlapConflict) return 'multiple';
   if (isSundayConflict) return 'sunday';
   if (isOverlapConflict) return 'overlap';
-
+  if (isHolidayConflict) return 'holiday';
   return null;
 }

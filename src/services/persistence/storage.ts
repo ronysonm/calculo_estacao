@@ -8,13 +8,16 @@ import { Lot } from '@/domain/value-objects/Lot';
 import { Protocol } from '@/domain/value-objects/Protocol';
 
 const STORAGE_KEY = 'estacao-iatf-data';
-const VERSION = 1;
+const VERSION = 2;
+
+type CustomHolidayJSON = { year: number; month: number; day: number; name: string };
 
 interface StorageData {
   version: number;
   lots: ReturnType<Lot['toJSON']>[];
   customProtocols: ReturnType<Protocol['toJSON']>[];
   roundSuccessRates?: readonly number[] | undefined;
+  customHolidays: CustomHolidayJSON[];
   savedAt: string;
 }
 
@@ -26,14 +29,19 @@ export class EstacaoStorage {
    * @param customProtocols - Custom protocols (optional)
    * @returns true if saved successfully, false if quota exceeded
    */
-  save(lots: Lot[], customProtocols: Protocol[] = [], roundSuccessRates?: readonly number[]): boolean {
+  save(
+    lots: Lot[],
+    customProtocols: Protocol[] = [],
+    roundSuccessRates?: readonly number[],
+    customHolidays: CustomHolidayJSON[] = []
+  ): boolean {
     try {
-      // Check size before saving
       const data: StorageData = {
         version: VERSION,
         lots: lots.map((lot) => lot.toJSON()),
         customProtocols: customProtocols.map((p) => p.toJSON()),
         roundSuccessRates,
+        customHolidays,
         savedAt: new Date().toISOString(),
       };
 
@@ -70,27 +78,39 @@ export class EstacaoStorage {
    *
    * @returns Loaded data or null if not found/invalid
    */
-  load(): { lots: Lot[]; customProtocols: Protocol[]; roundSuccessRates?: readonly number[] | undefined } | null {
+  load(): {
+    lots: Lot[];
+    customProtocols: Protocol[];
+    roundSuccessRates?: readonly number[] | undefined;
+    customHolidays: CustomHolidayJSON[];
+  } | null {
     try {
       const json = localStorage.getItem(STORAGE_KEY);
       if (!json) return null;
 
       const data = JSON.parse(json) as StorageData;
 
-      // Version check
+      // Migration: v1 → v2 (add customHolidays)
+      if (data.version === 1) {
+        const lots = data.lots.map((lotData) => Lot.fromJSON(lotData as any));
+        const customProtocols = data.customProtocols.map((pData) => Protocol.fromJSON(pData));
+        return { lots, customProtocols, roundSuccessRates: data.roundSuccessRates, customHolidays: [] };
+      }
+
       if (data.version !== VERSION) {
         console.warn(`Storage version mismatch: ${data.version} vs ${VERSION}`);
-        // Could implement migration here
         return null;
       }
 
-      // Deserialize
       const lots = data.lots.map((lotData) => Lot.fromJSON(lotData as any));
-      const customProtocols = data.customProtocols.map((pData) =>
-        Protocol.fromJSON(pData)
-      );
+      const customProtocols = data.customProtocols.map((pData) => Protocol.fromJSON(pData));
 
-      return { lots, customProtocols, roundSuccessRates: data.roundSuccessRates };
+      return {
+        lots,
+        customProtocols,
+        roundSuccessRates: data.roundSuccessRates,
+        customHolidays: data.customHolidays ?? [],
+      };
     } catch (error) {
       console.error('Failed to load from localStorage:', error);
       return null;

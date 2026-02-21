@@ -8,6 +8,8 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { lotsSignal, setLots } from '@/state/signals/lots';
 import { roundSuccessRatesSignal, setAllRoundSuccessRates } from '@/state/signals/success-rates';
+import { customHolidaysSignal, setCustomHolidays } from '@/state/signals/conflicts';
+import { DateOnly } from '@/domain/value-objects/DateOnly';
 import { storage } from '@/services/persistence/storage';
 import { debounce } from '@/utils/performance';
 
@@ -35,6 +37,14 @@ export function usePersistence() {
       if (data.roundSuccessRates) {
         setAllRoundSuccessRates(data.roundSuccessRates);
       }
+      if (data.customHolidays && data.customHolidays.length > 0) {
+        setCustomHolidays(
+          data.customHolidays.map((h) => ({
+            date: DateOnly.create(h.year, h.month, h.day),
+            name: h.name,
+          }))
+        );
+      }
       console.log(`Loaded ${data.lots.length} lots from localStorage`);
     }
 
@@ -49,7 +59,13 @@ export function usePersistence() {
     const debouncedSave = debounce(() => {
       const lots = lotsSignal.value;
       const rates = roundSuccessRatesSignal.value;
-      storage.save(lots, [], rates);
+      const holidays = customHolidaysSignal.value.map((h) => ({
+        year: h.date.year,
+        month: h.date.month,
+        day: h.date.day,
+        name: h.name,
+      }));
+      storage.save(lots, [], rates, holidays);
 
       // Check quota
       const quota = storage.getQuotaInfo();
@@ -83,7 +99,7 @@ export function usePersistence() {
     }, 1000);
 
     debouncedSave();
-  }, [lotsSignal.value, roundSuccessRatesSignal.value]);
+  }, [lotsSignal.value, roundSuccessRatesSignal.value, customHolidaysSignal.value]);
 
   return {
     clear: () => storage.clear(),

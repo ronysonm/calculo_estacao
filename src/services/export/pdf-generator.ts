@@ -33,6 +33,8 @@ const OVERLAP_BG: [number, number, number] = [255, 240, 220];
 const OVERLAP_TEXT: [number, number, number] = [204, 102, 0];
 const MULTIPLE_BG: [number, number, number] = [255, 210, 210];
 const MULTIPLE_TEXT: [number, number, number] = [204, 0, 0];
+const HOLIDAY_BG: [number, number, number] = [232, 213, 245];
+const HOLIDAY_TEXT: [number, number, number] = [123, 45, 142];
 
 // Gap column style (no borders)
 const GAP_STYLE = {
@@ -50,7 +52,7 @@ const GAP_STYLE = {
  */
 function applyConflictStyle(
   cellStyles: Record<string, any>,
-  conflict: 'sunday' | 'overlap' | 'multiple'
+  conflict: 'sunday' | 'overlap' | 'holiday' | 'multiple'
 ): void {
   switch (conflict) {
     case 'sunday':
@@ -60,6 +62,10 @@ function applyConflictStyle(
     case 'overlap':
       cellStyles.fillColor = OVERLAP_BG;
       cellStyles.textColor = OVERLAP_TEXT;
+      break;
+    case 'holiday':
+      cellStyles.fillColor = HOLIDAY_BG;
+      cellStyles.textColor = HOLIDAY_TEXT;
       break;
     case 'multiple':
       cellStyles.fillColor = MULTIPLE_BG;

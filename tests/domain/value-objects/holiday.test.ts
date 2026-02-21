@@ -32,7 +32,7 @@ describe('expandNationalHolidays', () => {
     const jan1 = result.find((h) => h.name === 'Confraternização Universal');
     expect(jan1).toBeDefined();
     expect(jan1!.date.year).toBe(2026);
-    expect(jan1!.date.month).toBe(1);
+    expect(jan1!.date.month).toBe(1); // 1-based, not 0-based
     expect(jan1!.date.day).toBe(1);
   });
 
@@ -48,7 +48,7 @@ describe('expandNationalHolidays', () => {
 describe('findHoliday', () => {
   it('finds matching holiday by date', () => {
     const holidays = expandNationalHolidays([2026]);
-    const date = DateOnly.create(2026, 9, 7);
+    const date = DateOnly.create(2026, 9, 7); // Independência do Brasil
     const result = findHoliday(date, holidays);
     expect(result).not.toBeNull();
     expect(result!.name).toBe('Independência do Brasil');
@@ -56,7 +56,7 @@ describe('findHoliday', () => {
 
   it('returns null for non-holiday date', () => {
     const holidays = expandNationalHolidays([2026]);
-    const date = DateOnly.create(2026, 2, 15);
+    const date = DateOnly.create(2026, 2, 15); // random weekday
     expect(findHoliday(date, holidays)).toBeNull();
   });
 

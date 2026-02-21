@@ -1,4 +1,5 @@
 import { Lot } from '@/domain/value-objects/Lot';
+import { Holiday } from '@/domain/value-objects/Holiday';
 import { OptimizationScenario } from '@/domain/value-objects/OptimizationScenario';
 import {
   Chromosome,
@@ -24,7 +25,8 @@ import { applyChromosome, selectDiverseTop4 } from './diversity-selector';
 export class GeneticScheduler {
   constructor(
     private readonly lots: Lot[],
-    private readonly params: GeneticParams = DEFAULT_GA_PARAMS
+    private readonly params: GeneticParams = DEFAULT_GA_PARAMS,
+    private readonly holidays: readonly Holiday[] = []
   ) {}
 
   /**
@@ -145,7 +147,7 @@ export class GeneticScheduler {
     const population: Chromosome[] = [];
 
     // 1 solucao NEH (boa heuristica com exploracao de gaps)
-    const nehSolution = nehInitialization(this.lots, weights);
+    const nehSolution = nehInitialization(this.lots, weights, this.holidays);
     population.push(nehSolution);
 
     // 1 solucao baseline (sem alteracoes - garante nunca piorar)
@@ -180,7 +182,8 @@ export class GeneticScheduler {
       const { fitness, objectives } = evaluateChromosome(
         chromosome,
         this.lots,
-        weights
+        weights,
+        this.holidays
       );
       chromosome.fitness = fitness;
       chromosome.objectives = objectives;

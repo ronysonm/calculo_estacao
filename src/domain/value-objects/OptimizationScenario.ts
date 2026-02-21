@@ -10,6 +10,7 @@ export interface ScheduleObjectives {
   overlapsRounds34: number;
   totalCycleDays: number;
   intervalViolations: number;
+  holidayConflicts: number;
 }
 
 /**

@@ -13,6 +13,7 @@ import { DEFAULT_ROUNDS } from '@/domain/constants';
 import { useConflictSummary } from '@/hooks/useConflicts';
 import { usePersistence } from '@/hooks/usePersistence';
 import { HolidaysModal } from '@/components/HolidaysModal/HolidaysModal';
+import { resetRoundSuccessRates } from '@/state/signals/success-rates';
 import '@/styles/global.css';
 import '@/styles/conflicts.css';
 import '@/styles/print.css';
@@ -35,6 +36,7 @@ export function App() {
 
   const handleReset = () => {
     initializeDefaultLots();
+    resetRoundSuccessRates();
     setShowResetConfirm(false);
   };
 
@@ -96,42 +98,32 @@ export function App() {
               )}
             </div>
 
-            {/* Conflict summary + Feriados button */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-              <div class="conflict-summary">
-                {conflictSummary.total === 0 ? (
-                  <span class="conflict-badge conflict-badge-none">{'\u2713'} Sem conflitos</span>
-                ) : (
-                  <>
-                    <span style={{ fontWeight: 500 }}>
-                      {conflictSummary.total} conflito{conflictSummary.total > 1 ? 's' : ''}
+            {/* Conflict summary */}
+            <div class="conflict-summary">
+              {conflictSummary.total === 0 ? (
+                <span class="conflict-badge conflict-badge-none">{'\u2713'} Sem conflitos</span>
+              ) : (
+                <>
+                  <span style={{ fontWeight: 500 }}>
+                    {conflictSummary.total} conflito{conflictSummary.total > 1 ? 's' : ''}
+                  </span>
+                  {conflictSummary.sundays > 0 && (
+                    <span class="conflict-badge conflict-badge-sunday">
+                      {conflictSummary.sundays} domingo{conflictSummary.sundays > 1 ? 's' : ''}
                     </span>
-                    {conflictSummary.sundays > 0 && (
-                      <span class="conflict-badge conflict-badge-sunday">
-                        {conflictSummary.sundays} domingo{conflictSummary.sundays > 1 ? 's' : ''}
-                      </span>
-                    )}
-                    {conflictSummary.overlaps > 0 && (
-                      <span class="conflict-badge conflict-badge-overlap">
-                        {conflictSummary.overlaps} sobreposic{conflictSummary.overlaps > 1 ? '\u00f5es' : '\u00e3o'}
-                      </span>
-                    )}
-                    {conflictSummary.holidays > 0 && (
-                      <span class="conflict-badge conflict-badge-holiday">
-                        {conflictSummary.holidays} feriado{conflictSummary.holidays > 1 ? 's' : ''}
-                      </span>
-                    )}
-                  </>
-                )}
-              </div>
-              <button
-                type="button"
-                class="btn-secondary"
-                style={{ fontSize: '0.75rem', padding: '4px 8px' }}
-                onClick={() => setShowHolidaysModal(true)}
-              >
-                Feriados
-              </button>
+                  )}
+                  {conflictSummary.overlaps > 0 && (
+                    <span class="conflict-badge conflict-badge-overlap">
+                      {conflictSummary.overlaps} sobreposic{conflictSummary.overlaps > 1 ? '\u00f5es' : '\u00e3o'}
+                    </span>
+                  )}
+                  {conflictSummary.holidays > 0 && (
+                    <span class="conflict-badge conflict-badge-holiday">
+                      {conflictSummary.holidays} feriado{conflictSummary.holidays > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -150,6 +142,16 @@ export function App() {
           }}
         >
           <LotForm />
+
+          <div class="card" style={{ marginTop: 'var(--spacing-md)' }}>
+            <button
+              type="button"
+              class="btn-secondary w-full"
+              onClick={() => setShowHolidaysModal(true)}
+            >
+              Feriados
+            </button>
+          </div>
 
           <div class="card" style={{ marginTop: 'var(--spacing-md)' }}>
             <button

@@ -4,6 +4,7 @@ import { detectConflicts } from '@/core/conflict/detector';
 import { isSunday } from '@/core/date-engine/utils';
 import { Holiday } from '@/domain/value-objects/Holiday';
 import { ScheduleObjectives } from '@/domain/value-objects/OptimizationScenario';
+import { MIN_ROUND_GAP, MAX_ROUND_GAP } from '@/domain/constants';
 import { Chromosome, ScenarioWeights, ScenarioProfile } from './types';
 
 /**
@@ -147,11 +148,11 @@ export function calculateObjectives(
 
   const totalCycleDays = minD0 && maxDate ? maxDate.daysSince(minD0) : 0;
 
-  // Contar violacoes de intervalo (21-23 dias)
+  // Contar violacoes de intervalo (MIN_ROUND_GAP a MAX_ROUND_GAP dias)
   let intervalViolations = 0;
   for (const lot of lots) {
     for (const gap of lot.roundGaps) {
-      if (gap < 21 || gap > 23) {
+      if (gap < MIN_ROUND_GAP || gap > MAX_ROUND_GAP) {
         intervalViolations++;
       }
     }

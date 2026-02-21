@@ -16,6 +16,7 @@ import {
   gaussianMutation,
 } from '../../../src/core/optimization/genetic-operators';
 import { Chromosome } from '../../../src/core/optimization/types';
+import { MIN_ROUND_GAP, MAX_ROUND_GAP } from '../../../src/domain/constants';
 
 describe('createRandomChromosome', () => {
   it('should create chromosome with correct number of genes', () => {
@@ -45,15 +46,15 @@ describe('createRandomChromosome', () => {
     }
   });
 
-  it('should generate roundGaps within [21, 23]', () => {
+  it(`should generate roundGaps within [${MIN_ROUND_GAP}, ${MAX_ROUND_GAP}]`, () => {
     const lotIds = ['lot1', 'lot2'];
     const chromosome = createRandomChromosome(lotIds, 15);
 
     for (const gene of chromosome.genes) {
       expect(gene.roundGaps).toHaveLength(3);
       for (const gap of gene.roundGaps) {
-        expect(gap).toBeGreaterThanOrEqual(21);
-        expect(gap).toBeLessThanOrEqual(23);
+        expect(gap).toBeGreaterThanOrEqual(MIN_ROUND_GAP);
+        expect(gap).toBeLessThanOrEqual(MAX_ROUND_GAP);
       }
     }
   });
@@ -249,7 +250,7 @@ describe('gaussianMutation', () => {
     }
   });
 
-  it('should mutate roundGaps within [21, 23]', () => {
+  it(`should mutate roundGaps within [${MIN_ROUND_GAP}, ${MAX_ROUND_GAP}]`, () => {
     const chromosome: Chromosome = {
       genes: [
         { lotId: 'lot1', d0Offset: 0, roundGaps: [22, 22, 22] },
@@ -262,8 +263,8 @@ describe('gaussianMutation', () => {
 
     for (const gene of chromosome.genes) {
       for (const gap of gene.roundGaps) {
-        expect(gap).toBeGreaterThanOrEqual(21);
-        expect(gap).toBeLessThanOrEqual(23);
+        expect(gap).toBeGreaterThanOrEqual(MIN_ROUND_GAP);
+        expect(gap).toBeLessThanOrEqual(MAX_ROUND_GAP);
       }
     }
   });

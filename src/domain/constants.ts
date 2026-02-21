@@ -43,6 +43,16 @@ export const DEFAULT_LOT_NAMES: readonly string[] = [
 export const DEFAULT_ROUNDS = 4;
 
 /**
+ * Minimum allowed round gap in days
+ */
+export const MIN_ROUND_GAP = 20;
+
+/**
+ * Maximum allowed round gap in days
+ */
+export const MAX_ROUND_GAP = 24;
+
+/**
  * Default round gaps in days (CALC-05)
  * Gap between the LAST protocol day of round N and D0 of round N+1.
  * Array of 3 gaps for 4 rounds: [R1→R2, R2→R3, R3→R4]

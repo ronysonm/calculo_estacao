@@ -1,4 +1,5 @@
 import { Chromosome, Gene } from './types';
+import { MIN_ROUND_GAP, MAX_ROUND_GAP } from '@/domain/constants';
 
 /**
  * Selecao por torneio
@@ -77,10 +78,11 @@ export function gaussianMutation(
       );
     }
 
-    // Mutar cada gap independentemente (21, 22 ou 23)
+    // Mutar cada gap independentemente (MIN_ROUND_GAP a MAX_ROUND_GAP)
+    const gapRange = MAX_ROUND_GAP - MIN_ROUND_GAP + 1;
     for (let i = 0; i < 3; i++) {
       if (Math.random() < mutationRate) {
-        gene.roundGaps[i] = 21 + Math.floor(Math.random() * 3);
+        gene.roundGaps[i] = MIN_ROUND_GAP + Math.floor(Math.random() * gapRange);
       }
     }
   }
@@ -93,13 +95,14 @@ export function createRandomChromosome(
   lotIds: string[],
   maxAdjustment: number
 ): Chromosome {
+  const gapRange = MAX_ROUND_GAP - MIN_ROUND_GAP + 1;
   const genes = lotIds.map((lotId) => ({
     lotId,
     d0Offset: Math.floor(Math.random() * (2 * maxAdjustment + 1)) - maxAdjustment,
     roundGaps: [
-      21 + Math.floor(Math.random() * 3),
-      21 + Math.floor(Math.random() * 3),
-      21 + Math.floor(Math.random() * 3),
+      MIN_ROUND_GAP + Math.floor(Math.random() * gapRange),
+      MIN_ROUND_GAP + Math.floor(Math.random() * gapRange),
+      MIN_ROUND_GAP + Math.floor(Math.random() * gapRange),
     ] as [number, number, number],
   }));
 

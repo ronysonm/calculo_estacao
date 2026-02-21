@@ -1,6 +1,6 @@
 import { DateOnly } from './DateOnly';
 import { Protocol } from './Protocol';
-import { ROUND_NAMES } from '../constants';
+import { ROUND_NAMES, MIN_ROUND_GAP, MAX_ROUND_GAP } from '../constants';
 
 /**
  * Lot - Immutable lot value object
@@ -22,8 +22,8 @@ export class Lot {
       throw new Error('Lot name cannot be empty');
     }
     for (const gap of roundGaps) {
-      if (gap < 1) {
-        throw new Error('Round gap must be at least 1 day');
+      if (gap < MIN_ROUND_GAP || gap > MAX_ROUND_GAP) {
+        throw new Error(`Round gap must be between ${MIN_ROUND_GAP} and ${MAX_ROUND_GAP} days`);
       }
     }
     if (animalCount < 1) {
@@ -231,9 +231,10 @@ export class Lot {
     // Handle migration from old roundInterval to new roundGaps
     let gaps: readonly number[];
     if (json.roundGaps) {
-      gaps = json.roundGaps;
+      gaps = json.roundGaps.map((g) => Math.min(MAX_ROUND_GAP, Math.max(MIN_ROUND_GAP, g)));
     } else if (json.roundInterval !== undefined) {
-      gaps = [json.roundInterval, json.roundInterval, json.roundInterval];
+      const clamped = Math.min(MAX_ROUND_GAP, Math.max(MIN_ROUND_GAP, json.roundInterval));
+      gaps = [clamped, clamped, clamped];
     } else {
       gaps = [22, 22, 22];
     }

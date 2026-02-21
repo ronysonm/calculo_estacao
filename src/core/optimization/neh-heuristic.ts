@@ -1,9 +1,13 @@
 import { Lot } from '@/domain/value-objects/Lot';
 import { Holiday } from '@/domain/value-objects/Holiday';
+import { MIN_ROUND_GAP, MAX_ROUND_GAP } from '@/domain/constants';
 import { Chromosome, Gene, ScenarioWeights } from './types';
 import { evaluateChromosome } from './fitness-calculator';
 
-const VALID_GAPS = [21, 22, 23] as const;
+const VALID_GAPS = Array.from(
+  { length: MAX_ROUND_GAP - MIN_ROUND_GAP + 1 },
+  (_, i) => MIN_ROUND_GAP + i
+);
 
 /**
  * Heuristica NEH para inicializacao

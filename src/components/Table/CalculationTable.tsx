@@ -12,7 +12,7 @@ import { roundSuccessRatesSignal, setRoundSuccessRate } from '@/state/signals/su
 import { handlingDatesSignal, cycleStartSignal, allHolidaysSignal } from '@/state/signals/conflicts';
 import { getDayOfWeekName, formatDateBR, addDaysToDateOnly, daysBetween } from '@/core/date-engine/utils';
 import { getConflictTypeForCell } from '@/core/conflict/detector';
-import { DEFAULT_ROUNDS, ROUND_NAMES, PREDEFINED_PROTOCOLS, GESTACAO_DIAS } from '@/domain/constants';
+import { DEFAULT_ROUNDS, ROUND_NAMES, PREDEFINED_PROTOCOLS, GESTACAO_DIAS, MIN_ROUND_GAP, MAX_ROUND_GAP } from '@/domain/constants';
 import { DateOnly } from '@/domain/value-objects/DateOnly';
 import { Lot } from '@/domain/value-objects/Lot';
 import { HandlingDate } from '@/domain/value-objects/HandlingDate';
@@ -139,7 +139,7 @@ function LotBlock({
 
   const handleGapChange = (gapIndex: number, delta: number) => {
     const currentGap = lot.roundGaps[gapIndex] ?? 22;
-    const newGap = Math.max(1, currentGap + delta);
+    const newGap = Math.min(MAX_ROUND_GAP, Math.max(MIN_ROUND_GAP, currentGap + delta));
     changeLotRoundGap(lot.id, gapIndex, newGap);
   };
 
@@ -250,6 +250,7 @@ function LotBlock({
                           class="gap-btn gap-btn-minus"
                           onClick={() => handleGapChange(roundIdx, -1)}
                           title="Menos 1 dia"
+                          disabled={(lot.roundGaps[roundIdx] ?? 22) <= MIN_ROUND_GAP}
                         >
                           -1
                         </button>
@@ -259,6 +260,7 @@ function LotBlock({
                           class="gap-btn gap-btn-plus"
                           onClick={() => handleGapChange(roundIdx, 1)}
                           title="Mais 1 dia"
+                          disabled={(lot.roundGaps[roundIdx] ?? 22) >= MAX_ROUND_GAP}
                         >
                           +1
                         </button>

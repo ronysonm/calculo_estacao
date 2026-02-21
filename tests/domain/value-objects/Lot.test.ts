@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Lot } from '../../../src/domain/value-objects/Lot';
 import { Protocol } from '../../../src/domain/value-objects/Protocol';
 import { DateOnly } from '../../../src/domain/value-objects/DateOnly';
+import { MIN_ROUND_GAP, MAX_ROUND_GAP } from '../../../src/domain/constants';
 
 const protocol = Protocol.create('p1', 'D0-D7-D9', [0, 7, 9], 'D0-D7-D9');
 const d0 = DateOnly.create(2026, 3, 1);
@@ -51,8 +52,74 @@ describe('Lot - animalCount', () => {
 
   it('withRoundGap should preserve animalCount', () => {
     const lot = Lot.create('l1', 'Test', d0, protocol, [22, 22, 22], 250);
-    const updated = lot.withRoundGap(0, 25);
+    const updated = lot.withRoundGap(0, 24);
     expect(updated.animalCount).toBe(250);
+  });
+});
+
+describe('Lot - roundGap validation', () => {
+  it('should accept gaps at MIN_ROUND_GAP boundary', () => {
+    const lot = Lot.create('l1', 'Test', d0, protocol, [MIN_ROUND_GAP, MIN_ROUND_GAP, MIN_ROUND_GAP]);
+    expect(lot.roundGaps).toEqual([MIN_ROUND_GAP, MIN_ROUND_GAP, MIN_ROUND_GAP]);
+  });
+
+  it('should accept gaps at MAX_ROUND_GAP boundary', () => {
+    const lot = Lot.create('l1', 'Test', d0, protocol, [MAX_ROUND_GAP, MAX_ROUND_GAP, MAX_ROUND_GAP]);
+    expect(lot.roundGaps).toEqual([MAX_ROUND_GAP, MAX_ROUND_GAP, MAX_ROUND_GAP]);
+  });
+
+  it('should throw for gap below MIN_ROUND_GAP', () => {
+    expect(() => Lot.create('l1', 'Test', d0, protocol, [MIN_ROUND_GAP - 1, 22, 22])).toThrow(
+      `Round gap must be between ${MIN_ROUND_GAP} and ${MAX_ROUND_GAP} days`
+    );
+  });
+
+  it('should throw for gap above MAX_ROUND_GAP', () => {
+    expect(() => Lot.create('l1', 'Test', d0, protocol, [22, MAX_ROUND_GAP + 1, 22])).toThrow(
+      `Round gap must be between ${MIN_ROUND_GAP} and ${MAX_ROUND_GAP} days`
+    );
+  });
+
+  it('should throw for gap of 1 (old minimum)', () => {
+    expect(() => Lot.create('l1', 'Test', d0, protocol, [1, 22, 22])).toThrow();
+  });
+});
+
+describe('Lot - fromJSON gap clamping', () => {
+  it('should clamp gaps below MIN_ROUND_GAP from legacy data', () => {
+    const json = {
+      id: 'l1',
+      name: 'Test',
+      d0: { year: 2026, month: 3, day: 1 },
+      protocol: { id: 'p1', name: 'D0-D7-D9', intervals: [0, 7, 9] as readonly number[], type: 'D0-D7-D9' as const },
+      roundGaps: [10, 22, 22] as readonly number[],
+    };
+    const lot = Lot.fromJSON(json);
+    expect(lot.roundGaps[0]).toBe(MIN_ROUND_GAP);
+  });
+
+  it('should clamp gaps above MAX_ROUND_GAP from legacy data', () => {
+    const json = {
+      id: 'l1',
+      name: 'Test',
+      d0: { year: 2026, month: 3, day: 1 },
+      protocol: { id: 'p1', name: 'D0-D7-D9', intervals: [0, 7, 9] as readonly number[], type: 'D0-D7-D9' as const },
+      roundGaps: [22, 30, 22] as readonly number[],
+    };
+    const lot = Lot.fromJSON(json);
+    expect(lot.roundGaps[1]).toBe(MAX_ROUND_GAP);
+  });
+
+  it('should clamp roundInterval from legacy data', () => {
+    const json = {
+      id: 'l1',
+      name: 'Test',
+      d0: { year: 2026, month: 3, day: 1 },
+      protocol: { id: 'p1', name: 'D0-D7-D9', intervals: [0, 7, 9] as readonly number[], type: 'D0-D7-D9' as const },
+      roundInterval: 5,
+    };
+    const lot = Lot.fromJSON(json);
+    expect(lot.roundGaps).toEqual([MIN_ROUND_GAP, MIN_ROUND_GAP, MIN_ROUND_GAP]);
   });
 });
 

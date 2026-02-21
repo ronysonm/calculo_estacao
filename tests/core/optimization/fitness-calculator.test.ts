@@ -182,6 +182,7 @@ describe('scalarizeObjectives - Penalty Calculation', () => {
       overlapsRounds34: 0,
       sundaysRounds34: 0,
       totalCycleDays: 0,
+      holidayConflicts: 0,
     };
 
     const penalty = scalarizeObjectives(objectives, DEFAULT_WEIGHTS);
@@ -197,6 +198,7 @@ describe('scalarizeObjectives - Penalty Calculation', () => {
       overlapsRounds34: 0,
       sundaysRounds34: 0,
       totalCycleDays: 0,
+      holidayConflicts: 0,
     };
 
     const penalty = scalarizeObjectives(objectives, DEFAULT_WEIGHTS);
@@ -212,6 +214,7 @@ describe('scalarizeObjectives - Penalty Calculation', () => {
       overlapsRounds34: 0,
       sundaysRounds34: 0,
       totalCycleDays: 0,
+      holidayConflicts: 0,
     };
 
     const penalty = scalarizeObjectives(objectives, DEFAULT_WEIGHTS);
@@ -227,11 +230,28 @@ describe('scalarizeObjectives - Penalty Calculation', () => {
       overlapsRounds34: 0,
       sundaysRounds34: 1,
       totalCycleDays: 0,
+      holidayConflicts: 0,
     };
 
     const penalty = scalarizeObjectives(objectives, DEFAULT_WEIGHTS);
 
     expect(penalty).toBe(100); // Positive penalty = undesirable
+  });
+
+  it('should penalize holidayConflicts with weight 1000', () => {
+    const objectives = {
+      intervalViolations: 0,
+      overlapsRounds12: 0,
+      sundaysRounds12: 0,
+      overlapsRounds34: 0,
+      sundaysRounds34: 0,
+      totalCycleDays: 0,
+      holidayConflicts: 1,
+    };
+
+    const penalty = scalarizeObjectives(objectives, DEFAULT_WEIGHTS);
+
+    expect(penalty).toBe(1000);
   });
 
   it('should sum multiple penalties correctly', () => {
@@ -242,12 +262,13 @@ describe('scalarizeObjectives - Penalty Calculation', () => {
       overlapsRounds34: 1,
       sundaysRounds34: 1,
       totalCycleDays: 100,
+      holidayConflicts: 1,
     };
 
     const penalty = scalarizeObjectives(objectives, DEFAULT_WEIGHTS);
 
-    // 5000 + 10000 + 1000 + 100 + 100 + 100 = 16300
-    expect(penalty).toBe(16300);
+    // 5000 + 10000 + 1000 + 100 + 100 + 100 + 1000 = 17300
+    expect(penalty).toBe(17300);
   });
 });
 
